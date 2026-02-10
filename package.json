@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
+    "@heroui/react": "^3.0.0-beta.6",
+    "@heroui/styles": "^3.0.0-beta.6",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-devtools": "^0.7.0",
@@ -23,6 +25,7 @@
     "@tanstack/react-table": "^8.21.2",
     "@tanstack/router-plugin": "^1.132.0",
     "better-auth": "^1.4.12",
+    "framer-motion": "^12.34.0",
     "lucide-react": "^0.561.0",
     "nitro": "npm:nitro-nightly@latest",
     "react": "^19.2.0",
