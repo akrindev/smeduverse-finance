@@ -1,4 +1,5 @@
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
+import { Toast } from '@heroui/react'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -11,5 +12,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 })
 
 function RootComponent() {
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      <Toast.Provider placement="top end" />
+    </>
+  )
 }

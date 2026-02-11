@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
 import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { usePayments } from '@/hooks/use-payments'
 import type { Payment } from '@/types/finance'
+import { TablePagination } from '@/lib/table-pagination'
 import {
   cardHeaderClass,
   pageHeaderClass,
@@ -33,6 +35,7 @@ const statusConfig: Record<Payment['status'], { label: string; color: 'success' 
 function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<'all' | Payment['status']>('all')
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
 
   const { data, isLoading, error } = usePayments()
   const payments = data?.data ?? []
@@ -45,7 +48,6 @@ function PaymentsPage() {
       const matchesSearch =
         query.length === 0 ||
         payment.payment_number.toLowerCase().includes(query) ||
-        payment.student_id.toLowerCase().includes(query) ||
         payment.student?.fullname.toLowerCase().includes(query) ||
         payment.student?.nipd?.toLowerCase().includes(query) ||
         payment.student?.nisn?.toLowerCase().includes(query) ||
@@ -60,6 +62,21 @@ function PaymentsPage() {
   const confirmedAmount = payments
     .filter((item) => item.status === 'confirmed')
     .reduce((sum, item) => sum + item.total_amount, 0)
+
+  useEffect(() => {
+    setPagination((previous) => ({ ...previous, pageIndex: 0 }))
+  }, [searchQuery, activeFilter])
+
+  const table = useReactTable({
+    data: filteredPayments,
+    columns: useMemo(() => [{ accessorKey: 'id' }], []),
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  })
+
+  const paginatedPayments = table.getRowModel().rows.map((row) => row.original)
 
   if (isLoading) {
     return (
@@ -186,14 +203,14 @@ function PaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredPayments.map((payment) => (
+                {paginatedPayments.map((payment) => (
                   <tr key={payment.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
                     <td className={`${tableBodyCellClass} font-mono text-xs`}>{payment.payment_number}</td>
                     <td className={tableBodyCellClass}>
                       <div>
                         <p className="font-medium text-default-700">{payment.student?.fullname ?? 'Unknown Student'}</p>
                         <p className="text-xs text-default-500 mt-0.5">
-                          {payment.student?.nipd || payment.student?.nisn || payment.student_id.slice(0, 8)}
+                          {payment.student?.nipd || payment.student?.nisn || '-'}
                         </p>
                       </div>
                     </td>
@@ -224,6 +241,18 @@ function PaymentsPage() {
           {filteredPayments.length === 0 && (
             <div className="py-10 text-center text-sm text-default-500">Tidak ada data pembayaran.</div>
           )}
+
+          <TablePagination
+            pageIndex={pagination.pageIndex}
+            pageCount={table.getPageCount()}
+            pageSize={pagination.pageSize}
+            totalRows={filteredPayments.length}
+            visibleRows={paginatedPayments.length}
+            canPreviousPage={table.getCanPreviousPage()}
+            canNextPage={table.getCanNextPage()}
+            onPreviousPage={() => table.previousPage()}
+            onNextPage={() => table.nextPage()}
+          />
         </Card.Content>
       </Card>
 
