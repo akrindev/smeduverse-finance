@@ -63,6 +63,9 @@ function SPPPage() {
       return (
         bill.bill_number.toLowerCase().includes(query) ||
         bill.student_id.toLowerCase().includes(query) ||
+        bill.student?.fullname.toLowerCase().includes(query) ||
+        bill.student?.nipd?.toLowerCase().includes(query) ||
+        bill.student?.nisn?.toLowerCase().includes(query) ||
         bill.title.toLowerCase().includes(query)
       )
     })
@@ -138,7 +141,7 @@ function SPPPage() {
               <TextField fullWidth>
                 <Input
                   aria-label="Cari tagihan"
-                  placeholder="Cari nomor tagihan, student_id, atau judul"
+                  placeholder="Cari nomor tagihan, nama siswa, atau judul"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
@@ -169,7 +172,7 @@ function SPPPage() {
               <thead>
                 <tr className="border-t border-border/70">
                   <th className={tableHeadCellClass}>Nomor Tagihan</th>
-                  <th className={`${tableHeadCellClass} hidden sm:table-cell`}>Student ID</th>
+                  <th className={tableHeadCellClass}>Siswa</th>
                   <th className={tableHeadCellClass}>Periode</th>
                   <th className={tableHeadCellClass}>Netto</th>
                   <th className={`${tableHeadCellClass} hidden md:table-cell`}>Sisa</th>
@@ -185,7 +188,14 @@ function SPPPage() {
                         <p className="text-xs text-default-500 mt-0.5">{bill.title}</p>
                       </div>
                     </td>
-                    <td className={`${tableBodyCellClass} hidden sm:table-cell`}>{bill.student_id}</td>
+                    <td className={tableBodyCellClass}>
+                      <div>
+                        <p className="font-medium text-default-700">{bill.student?.fullname ?? 'Unknown Student'}</p>
+                        <p className="text-xs text-default-500 mt-0.5">
+                          {bill.student?.nipd || bill.student?.nisn || bill.student_id.slice(0, 8)}
+                        </p>
+                      </div>
+                    </td>
                     <td className={tableBodyCellClass}>
                       {bill.period_month && bill.period_year ? `${bill.period_month}/${bill.period_year}` : '-'}
                     </td>

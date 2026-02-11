@@ -46,6 +46,9 @@ function PaymentsPage() {
         query.length === 0 ||
         payment.payment_number.toLowerCase().includes(query) ||
         payment.student_id.toLowerCase().includes(query) ||
+        payment.student?.fullname.toLowerCase().includes(query) ||
+        payment.student?.nipd?.toLowerCase().includes(query) ||
+        payment.student?.nisn?.toLowerCase().includes(query) ||
         (payment.reference_number ?? '').toLowerCase().includes(query)
 
       return matchesFilter && matchesSearch
@@ -161,7 +164,7 @@ function PaymentsPage() {
           <TextField fullWidth>
             <Input
               aria-label="Cari pembayaran"
-              placeholder="Cari nomor pembayaran, student_id, atau referensi"
+              placeholder="Cari nomor pembayaran, nama siswa, atau referensi"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
@@ -174,7 +177,7 @@ function PaymentsPage() {
               <thead>
                 <tr className="border-t border-border/70">
                   <th className={tableHeadCellClass}>Nomor</th>
-                  <th className={`${tableHeadCellClass} hidden sm:table-cell`}>Student ID</th>
+                  <th className={tableHeadCellClass}>Siswa</th>
                   <th className={tableHeadCellClass}>Metode</th>
                   <th className={tableHeadCellClass}>Total</th>
                   <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
@@ -185,7 +188,14 @@ function PaymentsPage() {
                 {filteredPayments.map((payment) => (
                   <tr key={payment.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
                     <td className={`${tableBodyCellClass} font-mono text-xs`}>{payment.payment_number}</td>
-                    <td className={`${tableBodyCellClass} hidden sm:table-cell`}>{payment.student_id}</td>
+                    <td className={tableBodyCellClass}>
+                      <div>
+                        <p className="font-medium text-default-700">{payment.student?.fullname ?? 'Unknown Student'}</p>
+                        <p className="text-xs text-default-500 mt-0.5">
+                          {payment.student?.nipd || payment.student?.nisn || payment.student_id.slice(0, 8)}
+                        </p>
+                      </div>
+                    </td>
                     <td className={`${tableBodyCellClass} capitalize`}>{payment.payment_method}</td>
                     <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(payment.total_amount)}</td>
                     <td className={`${tableBodyCellClass} hidden md:table-cell`}>{payment.payment_date}</td>

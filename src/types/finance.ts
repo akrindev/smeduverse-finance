@@ -68,6 +68,14 @@ export interface Teacher {
   photo?: string | null
 }
 
+export interface Student {
+  student_id: string // UUID
+  fullname: string
+  nipd: string | null
+  nisn: string | null
+  jenis_kelamin?: string | null
+}
+
 // ── Fee Types ───────────────────────────────────────────────
 
 export type BillingCycle = 'monthly' | 'one_time' | 'custom'
@@ -160,6 +168,7 @@ export interface StudentScholarship {
   is_active: boolean
   notes: string | null
   scholarship: Scholarship | null
+  student: Student | null
   created_at: string
   updated_at: string
 }
@@ -211,6 +220,7 @@ export interface Bill {
   voided_at: string | null
   fee_type: FeeType | null
   student_scholarship: StudentScholarship | null
+  student: Student | null
   allocations: BillAllocation[]
   created_at: string
   updated_at: string
@@ -290,6 +300,7 @@ export interface Payment {
   notes: string | null
   status: PaymentStatus
   voided_at: string | null
+  student: Student | null
   allocations: PaymentAllocation[]
   created_at: string
   updated_at: string

@@ -162,21 +162,28 @@ function DashboardOverview() {
           <Card.Content className="px-0 pb-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-t border-border/70">
-                    <th className={tableHeadCellClass}>Nomor</th>
-                    <th className={`${tableHeadCellClass} hidden sm:table-cell`}>Student ID</th>
-                    <th className={tableHeadCellClass}>Total</th>
+                  <thead>
+                    <tr className="border-t border-border/70">
+                      <th className={tableHeadCellClass}>Nomor</th>
+                      <th className={tableHeadCellClass}>Siswa</th>
+                      <th className={tableHeadCellClass}>Total</th>
                     <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
                     <th className={tableHeadCellClass}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentPayments.map((item) => (
-                    <tr key={item.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
-                      <td className={`${tableBodyCellClass} font-mono text-xs`}>{item.payment_number}</td>
-                      <td className={`${tableBodyCellClass} hidden sm:table-cell`}>{item.student_id}</td>
-                      <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(item.total_amount)}</td>
+                    {recentPayments.map((item) => (
+                      <tr key={item.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                        <td className={`${tableBodyCellClass} font-mono text-xs`}>{item.payment_number}</td>
+                        <td className={tableBodyCellClass}>
+                          <div>
+                            <p className="font-medium text-default-700">{item.student?.fullname ?? 'Unknown Student'}</p>
+                            <p className="text-xs text-default-500 mt-0.5">
+                              {item.student?.nipd || item.student?.nisn || item.student_id.slice(0, 8)}
+                            </p>
+                          </div>
+                        </td>
+                        <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(item.total_amount)}</td>
                       <td className={`${tableBodyCellClass} hidden md:table-cell`}>{item.payment_date}</td>
                       <td className={tableBodyCellClass}>
                         <Chip size="sm" variant="soft" color={item.status === 'confirmed' ? 'success' : 'danger'}>
