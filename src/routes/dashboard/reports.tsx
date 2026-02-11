@@ -1,11 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, Card, Chip, Input, Spinner, Tabs, TextField } from '@heroui/react'
-import { Calendar, Download } from 'lucide-react'
+import { Button, Card, Chip, Input, Tabs, TextField } from '@heroui/react'
+import { Calendar, Download, Receipt } from 'lucide-react'
 import { useState } from 'react'
+import { EmptyState } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
+import { LoadingState } from '@/components/shared/loading-state'
+import { PageHeader } from '@/components/shared/page-header'
 import { useCollectionsReport, useReceivablesReport } from '@/hooks/use-reports'
+import { formatCurrency } from '@/lib/format'
 import {
   cardHeaderClass,
-  pageHeaderClass,
   pageShellClass,
   surfaceCardClass,
   tableBodyCellClass,
@@ -15,14 +19,6 @@ import {
 export const Route = createFileRoute('/dashboard/reports')({
   component: ReportsPage,
 })
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
 
 function ReportsPage() {
   const [activeTab, setActiveTab] = useState<'receivables' | 'collections'>('receivables')
@@ -66,16 +62,12 @@ function ReportsPage() {
 
   return (
     <div className={pageShellClass}>
-      <div className={pageHeaderClass}>
-        <div>
-          <h1 className="text-2xl font-semibold">Laporan Keuangan</h1>
-          <p className="text-sm text-default-500 mt-1">Ringkasan piutang dan penerimaan dari Finance API.</p>
-        </div>
+      <PageHeader title="Laporan Keuangan" description="Ringkasan piutang dan penerimaan dari Finance API.">
         <Button variant="secondary">
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
-      </div>
+      </PageHeader>
 
       <Card className={surfaceCardClass}>
         <Card.Content className="p-4">
@@ -129,15 +121,9 @@ function ReportsPage() {
 
         <Tabs.Panel id="receivables" className="mt-6">
           {receivablesLoading ? (
-            <div className="min-h-[300px] flex items-center justify-center">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState minHeight="300px" />
           ) : receivablesError ? (
-            <Card className="border border-danger/20 bg-danger/5">
-              <Card.Content className="p-6">
-                <p className="text-danger font-medium">Gagal memuat data laporan piutang.</p>
-              </Card.Content>
-            </Card>
+            <ErrorState message="Gagal memuat data laporan piutang." />
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -240,15 +226,9 @@ function ReportsPage() {
 
         <Tabs.Panel id="collections" className="mt-6">
           {collectionsLoading ? (
-            <div className="min-h-[300px] flex items-center justify-center">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState minHeight="300px" />
           ) : collectionsError ? (
-            <Card className="border border-danger/20 bg-danger/5">
-              <Card.Content className="p-6">
-                <p className="text-danger font-medium">Gagal memuat data laporan penerimaan.</p>
-              </Card.Content>
-            </Card>
+            <ErrorState message="Gagal memuat data laporan penerimaan." />
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -297,9 +277,7 @@ function ReportsPage() {
                   </div>
 
                   {collections.daily.length === 0 && (
-                    <div className="text-center py-8">
-                      <p className="text-default-500">Tidak ada data penerimaan</p>
-                    </div>
+                    <EmptyState icon={Receipt} message="Tidak ada data penerimaan" />
                   )}
                 </Card.Content>
               </Card>

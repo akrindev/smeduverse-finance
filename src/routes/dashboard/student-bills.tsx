@@ -3,45 +3,37 @@ import {
   Card,
   Chip,
   Input,
-  ListBox,
-  Modal,
-  Select,
-  Separator,
   Spinner,
   Tabs,
-  TextArea,
   TextField,
-  toast,
   useOverlayState,
 } from '@heroui/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
-import { Controller, useForm } from 'react-hook-form'
-import {
-  BookOpen,
-  Calendar,
-  CheckCircle2,
-  CreditCard,
-  ExternalLink,
-  Receipt,
-  Search,
-  Wallet,
-  X,
-} from 'lucide-react'
+import { BookOpen, Calendar, CheckCircle2, CreditCard, ExternalLink, Receipt, Search, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { BillDetailModal } from '@/components/student-bills/bill-detail-modal'
+import { PaymentModal } from '@/components/student-bills/payment-modal'
+import { EmptyState } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
+import { LoadingState } from '@/components/shared/loading-state'
+import { PageHeader } from '@/components/shared/page-header'
+import { StatCard } from '@/components/shared/stat-card'
 import { useBills, useStudentBills } from '@/hooks/use-bills'
-import { useCreatePayment } from '@/hooks/use-payments'
-import { ApiResponseError } from '@/lib/api-client'
+import { formatCurrency } from '@/lib/format'
+import {
+  billStatusConfig,
+  MONTH_NAMES,
+} from '@/lib/student-bills'
 import {
   cardHeaderClass,
-  pageHeaderClass,
   pageShellClass,
   surfaceCardClass,
   tableBodyCellClass,
   tableHeadCellClass,
 } from '@/lib/page-styles'
 import { TablePagination } from '@/lib/table-pagination'
-import type { Bill, BillStatus, PaymentMethod } from '@/types/finance'
+import type { Bill } from '@/types/finance'
 
 interface SearchParams {
   student_id?: string
@@ -54,67 +46,12 @@ interface StudentLookupItem {
   nisn: string | null
 }
 
-interface CreatePaymentFormValues {
-  payment_date: string
-  total_amount: string
-  payment_method: PaymentMethod
-  reference_number: string
-  notes: string
-}
-
 export const Route = createFileRoute('/dashboard/student-bills')({
   validateSearch: (search: Record<string, unknown>): SearchParams => ({
     student_id: typeof search.student_id === 'string' ? search.student_id : undefined,
   }),
   component: StudentBillsPage,
 })
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
-
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('id-ID')
-}
-
-function todayDateString(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function firstValidationMessage(errors?: Record<string, string[]>): string | null {
-  if (!errors) {
-    return null
-  }
-
-  for (const messages of Object.values(errors)) {
-    if (messages.length > 0) {
-      return messages[0]
-    }
-  }
-
-  return null
-}
-
-const MONTH_NAMES = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-]
-
-const MONTH_NAMES_FULL = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-]
-
-const statusConfig: Record<BillStatus, { label: string; color: 'success' | 'warning' | 'danger' | 'default' }> = {
-  paid: { label: 'Lunas', color: 'success' },
-  partial: { label: 'Sebagian', color: 'warning' },
-  unpaid: { label: 'Belum Bayar', color: 'danger' },
-  void: { label: 'Void', color: 'default' },
-}
 
 function StudentBillsPage() {
   const { student_id: paramStudentId } = Route.useSearch()
@@ -129,36 +66,18 @@ function StudentBillsPage() {
   const detailModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
-  const paymentForm = useForm<CreatePaymentFormValues>({
-    defaultValues: {
-      payment_date: todayDateString(),
-      total_amount: '',
-      payment_method: 'cash',
-      reference_number: '',
-      notes: '',
-    },
-  })
-
-  const createPayment = useCreatePayment()
-
   useEffect(() => {
     setActiveStudentId(paramStudentId ?? '')
   }, [paramStudentId])
 
   const { data: billsLookupData, isLoading: studentLookupLoading } = useBills({ per_page: 100 })
-
-  const {
-    data: billsData,
-    isLoading: billsLoading,
-    error: billsError,
-  } = useStudentBills(activeStudentId, { per_page: 100 })
+  const { data: billsData, isLoading: billsLoading, error: billsError } = useStudentBills(activeStudentId, { per_page: 100 })
 
   const allBills = billsLookupData?.data ?? []
   const bills = billsData?.data ?? []
 
   const lookupStudents = useMemo<StudentLookupItem[]>(() => {
     const byId = new Map<string, StudentLookupItem>()
-
     for (const bill of allBills) {
       if (!bill.student || byId.has(bill.student_id)) {
         continue
@@ -177,7 +96,6 @@ function StudentBillsPage() {
 
   const matchedStudents = useMemo(() => {
     const query = searchKeyword.trim().toLowerCase()
-
     if (query.length < 2) {
       return []
     }
@@ -205,22 +123,14 @@ function StudentBillsPage() {
     return selectedStudentFromLookup?.fullname ?? null
   }, [bills, selectedStudentFromLookup])
 
-  const sppBills = useMemo(
-    () => bills.filter((bill) => bill.fee_type?.billing_cycle === 'monthly'),
-    [bills],
-  )
-
-  const otherBills = useMemo(
-    () => bills.filter((bill) => bill.fee_type?.billing_cycle !== 'monthly'),
-    [bills],
-  )
+  const sppBills = useMemo(() => bills.filter((bill) => bill.fee_type?.billing_cycle === 'monthly'), [bills])
+  const otherBills = useMemo(() => bills.filter((bill) => bill.fee_type?.billing_cycle !== 'monthly'), [bills])
 
   const summary = useMemo(() => {
     const totalBills = bills.length
     const totalNet = bills.reduce((sum, bill) => sum + bill.amount_net, 0)
     const totalPaid = bills.reduce((sum, bill) => sum + bill.amount_paid, 0)
     const totalOutstanding = bills.reduce((sum, bill) => sum + bill.amount_outstanding, 0)
-
     return { totalBills, totalNet, totalPaid, totalOutstanding }
   }, [bills])
 
@@ -264,22 +174,15 @@ function StudentBillsPage() {
   function selectStudent(studentId: string): void {
     setActiveStudentId(studentId)
     setSearchKeyword('')
-    navigate({
-      to: '/dashboard/student-bills',
-      search: { student_id: studentId },
-      replace: true,
-    })
+    navigate({ to: '/dashboard/student-bills', search: { student_id: studentId }, replace: true })
   }
 
   function clearSelectedStudent(): void {
     setActiveStudentId('')
     setSearchKeyword('')
     setSelectedBill(null)
-    navigate({
-      to: '/dashboard/student-bills',
-      search: {},
-      replace: true,
-    })
+    setBillToPay(null)
+    navigate({ to: '/dashboard/student-bills', search: {}, replace: true })
   }
 
   function openBillDetail(bill: Bill): void {
@@ -288,91 +191,16 @@ function StudentBillsPage() {
   }
 
   function openPaymentModalForBill(bill: Bill): void {
-    setBillToPay(bill)
-    paymentForm.reset({
-      payment_date: todayDateString(),
-      total_amount: String(bill.amount_outstanding),
-      payment_method: 'cash',
-      reference_number: '',
-      notes: `Pembayaran untuk ${bill.title}`,
-    })
+    setBillToPay({ ...bill })
     detailModalState.close()
     paymentModalState.open()
   }
 
-  const submitPayment = paymentForm.handleSubmit(async (values) => {
-    if (!billToPay) {
-      toast.danger('Tagihan belum dipilih.')
-      return
-    }
-
-    const amount = Number(values.total_amount)
-    if (!Number.isFinite(amount) || amount < 1) {
-      paymentForm.setError('total_amount', {
-        message: 'Nominal pembayaran harus lebih dari 0',
-      })
-      return
-    }
-
-    if (amount > billToPay.amount_outstanding) {
-      paymentForm.setError('total_amount', {
-        message: 'Nominal melebihi sisa tagihan',
-      })
-      return
-    }
-
-    try {
-      await createPayment.mutateAsync({
-        student_id: billToPay.student_id,
-        payment_date: values.payment_date,
-        total_amount: amount,
-        payment_method: values.payment_method,
-        reference_number: values.reference_number || undefined,
-        notes: values.notes || undefined,
-        auto_allocate: false,
-        allocations: [
-          {
-            finance_bill_id: billToPay.id,
-            allocated_amount: amount,
-            notes: `Pembayaran ${billToPay.bill_number}`,
-          },
-        ],
-      })
-
-      toast.success('Pembayaran berhasil disimpan.')
-      paymentModalState.close()
-      setBillToPay(null)
-      paymentForm.reset({
-        payment_date: todayDateString(),
-        total_amount: '',
-        payment_method: 'cash',
-        reference_number: '',
-        notes: '',
-      })
-    } catch (err) {
-      if (err instanceof ApiResponseError) {
-        const message = firstValidationMessage(err.errors) ?? err.message
-        toast.danger(message)
-      } else {
-        toast.danger('Gagal menyimpan pembayaran.')
-      }
-    }
-  })
-
-  const canPaySelectedBill = Boolean(
-    selectedBill && selectedBill.status !== 'void' && selectedBill.amount_outstanding > 0,
-  )
+  const canPaySelectedBill = Boolean(selectedBill && selectedBill.status !== 'void' && selectedBill.amount_outstanding > 0)
 
   return (
     <div className={pageShellClass}>
-      <div className={pageHeaderClass}>
-        <div>
-          <h1 className="text-2xl font-semibold">Tagihan Siswa</h1>
-          <p className="text-sm text-default-500 mt-1">
-            Lihat tagihan SPP dan tagihan lainnya per siswa.
-          </p>
-        </div>
-      </div>
+      <PageHeader title="Tagihan Siswa" description="Lihat tagihan SPP dan tagihan lainnya per siswa." />
 
       <Card className={surfaceCardClass}>
         <Card.Content className="p-4 sm:p-5 space-y-3">
@@ -419,9 +247,7 @@ function StudentBillsPage() {
                     >
                       <div className="text-left">
                         <p className="font-medium text-foreground">{student.fullname}</p>
-                        <p className="text-xs text-default-500">
-                          {student.nipd || student.nisn || '-'}
-                        </p>
+                        <p className="text-xs text-default-500">{student.nipd || student.nisn || '-'}</p>
                       </div>
                     </Button>
                   ))}
@@ -436,9 +262,7 @@ function StudentBillsPage() {
                 <Chip.Label>{studentName}</Chip.Label>
               </Chip>
               {(selectedStudentFromLookup?.nipd || selectedStudentFromLookup?.nisn) && (
-                <span className="text-xs text-default-500">
-                  {selectedStudentFromLookup?.nipd || selectedStudentFromLookup?.nisn}
-                </span>
+                <span className="text-xs text-default-500">{selectedStudentFromLookup?.nipd || selectedStudentFromLookup?.nisn}</span>
               )}
             </div>
           )}
@@ -447,9 +271,8 @@ function StudentBillsPage() {
 
       {!activeStudentId && (
         <Card className={surfaceCardClass}>
-          <Card.Content className="py-16 text-center">
-            <Search className="w-10 h-10 text-default-300 mx-auto mb-3" />
-            <p className="text-default-500">Cari siswa dengan nama, NIPD, atau NISN.</p>
+          <Card.Content>
+            <EmptyState icon={Search} message="Cari siswa dengan nama, NIPD, atau NISN." />
           </Card.Content>
         </Card>
       )}
@@ -457,69 +280,44 @@ function StudentBillsPage() {
       {activeStudentId && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <Card className={surfaceCardClass}>
-              <Card.Content className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-accent-soft text-accent flex items-center justify-center">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-default-500">Total Tagihan</p>
-                  <p className="text-xl font-semibold">{summary.totalBills}</p>
-                </div>
-              </Card.Content>
-            </Card>
-            <Card className={surfaceCardClass}>
-              <Card.Content className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-success/15 text-success flex items-center justify-center">
-                  <Wallet className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-default-500">Total Netto</p>
-                  <p className="text-xl font-semibold">{formatCurrency(summary.totalNet)}</p>
-                </div>
-              </Card.Content>
-            </Card>
-            <Card className={surfaceCardClass}>
-              <Card.Content className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-default-500">Sudah Dibayar</p>
-                  <p className="text-xl font-semibold">{formatCurrency(summary.totalPaid)}</p>
-                </div>
-              </Card.Content>
-            </Card>
-            <Card className={surfaceCardClass}>
-              <Card.Content className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-danger/15 text-danger flex items-center justify-center">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-default-500">Sisa Piutang</p>
-                  <p className="text-xl font-semibold">{formatCurrency(summary.totalOutstanding)}</p>
-                </div>
-              </Card.Content>
-            </Card>
+            <StatCard
+              icon={Receipt}
+              iconBgClass="bg-accent-soft"
+              iconColorClass="text-accent"
+              label="Total Tagihan"
+              value={summary.totalBills}
+            />
+            <StatCard
+              icon={Wallet}
+              iconBgClass="bg-success/15"
+              iconColorClass="text-success"
+              label="Total Netto"
+              value={formatCurrency(summary.totalNet)}
+            />
+            <StatCard
+              icon={CreditCard}
+              iconBgClass="bg-accent/15"
+              iconColorClass="text-accent"
+              label="Sudah Dibayar"
+              value={formatCurrency(summary.totalPaid)}
+            />
+            <StatCard
+              icon={BookOpen}
+              iconBgClass="bg-danger/15"
+              iconColorClass="text-danger"
+              label="Sisa Piutang"
+              value={formatCurrency(summary.totalOutstanding)}
+            />
           </div>
 
           {billsLoading ? (
-            <div className="min-h-[300px] flex items-center justify-center">
-              <Spinner size="lg" />
-            </div>
+            <LoadingState minHeight="300px" />
           ) : billsError ? (
-            <Card className="border border-danger/20 bg-danger/5">
-              <Card.Content className="p-6">
-                <p className="text-danger font-medium">Gagal memuat data tagihan siswa.</p>
-                <p className="text-sm text-default-500 mt-1">Silakan pilih siswa lain.</p>
-              </Card.Content>
-            </Card>
+            <ErrorState message="Gagal memuat data tagihan siswa." detail="Silakan pilih siswa lain." />
           ) : (
             <Tabs
               selectedKey={activeTab}
-              onSelectionChange={(key) =>
-                setActiveTab(key === 'other' ? 'other' : 'spp')
-              }
+              onSelectionChange={(key) => setActiveTab(key === 'other' ? 'other' : 'spp')}
               className="w-full"
             >
               <Tabs.ListContainer>
@@ -552,9 +350,8 @@ function StudentBillsPage() {
               <Tabs.Panel id="spp" className="mt-6">
                 {sppByYear.length === 0 ? (
                   <Card className={surfaceCardClass}>
-                    <Card.Content className="py-16 text-center">
-                      <Calendar className="w-10 h-10 text-default-300 mx-auto mb-3" />
-                      <p className="text-default-500">Belum ada tagihan SPP untuk siswa ini.</p>
+                    <Card.Content>
+                      <EmptyState icon={Calendar} message="Belum ada tagihan SPP untuk siswa ini." />
                     </Card.Content>
                   </Card>
                 ) : (
@@ -608,14 +405,12 @@ function StudentBillsPage() {
                                 onPress={() => openBillDetail(bill)}
                               >
                                 <div className="flex flex-col items-center gap-1.5">
-                                  <span className={`text-xs font-semibold ${statusTextClass}`}>
-                                    {MONTH_NAMES[month - 1]}
-                                  </span>
+                                  <span className={`text-xs font-semibold ${statusTextClass}`}>{MONTH_NAMES[month - 1]}</span>
                                   {isPaid ? (
                                     <CheckCircle2 className="w-4 h-4 text-success" />
                                   ) : (
                                     <span className={`text-[10px] font-medium ${statusTextClass}`}>
-                                      {statusConfig[bill.status].label}
+                                      {billStatusConfig[bill.status].label}
                                     </span>
                                   )}
                                 </div>
@@ -632,9 +427,8 @@ function StudentBillsPage() {
               <Tabs.Panel id="other" className="mt-6">
                 {otherBills.length === 0 ? (
                   <Card className={surfaceCardClass}>
-                    <Card.Content className="py-16 text-center">
-                      <Receipt className="w-10 h-10 text-default-300 mx-auto mb-3" />
-                      <p className="text-default-500">Tidak ada tagihan lainnya untuk siswa ini.</p>
+                    <Card.Content>
+                      <EmptyState icon={Receipt} message="Tidak ada tagihan lainnya untuk siswa ini." />
                     </Card.Content>
                   </Card>
                 ) : (
@@ -664,10 +458,7 @@ function StudentBillsPage() {
                           </thead>
                           <tbody>
                             {paginatedOtherBills.map((bill) => (
-                              <tr
-                                key={bill.id}
-                                className="border-t border-border/50 hover:bg-surface/60 transition-colors"
-                              >
+                              <tr key={bill.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
                                 <td className={tableBodyCellClass}>
                                   <p className="font-mono text-xs">{bill.bill_number}</p>
                                 </td>
@@ -679,9 +470,7 @@ function StudentBillsPage() {
                                     <Chip.Label>{bill.fee_type?.name ?? '-'}</Chip.Label>
                                   </Chip>
                                 </td>
-                                <td className={`${tableBodyCellClass} font-semibold`}>
-                                  {formatCurrency(bill.amount_net)}
-                                </td>
+                                <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(bill.amount_net)}</td>
                                 <td className={`${tableBodyCellClass} hidden md:table-cell text-danger`}>
                                   {formatCurrency(bill.amount_outstanding)}
                                 </td>
@@ -689,8 +478,8 @@ function StudentBillsPage() {
                                   <span className="text-xs">{bill.due_date ?? '-'}</span>
                                 </td>
                                 <td className={tableBodyCellClass}>
-                                  <Chip size="sm" variant="soft" color={statusConfig[bill.status].color}>
-                                    <Chip.Label>{statusConfig[bill.status].label}</Chip.Label>
+                                  <Chip size="sm" variant="soft" color={billStatusConfig[bill.status].color}>
+                                    <Chip.Label>{billStatusConfig[bill.status].label}</Chip.Label>
                                   </Chip>
                                 </td>
                                 <td className={tableBodyCellClass}>
@@ -737,335 +526,11 @@ function StudentBillsPage() {
         onPay={openPaymentModalForBill}
       />
 
-      <Modal state={paymentModalState}>
-        <Modal.Backdrop>
-          <Modal.Container size="md" placement="center">
-            <Modal.Dialog aria-label="Bayar tagihan siswa">
-              <form onSubmit={submitPayment}>
-                <Modal.Header>
-                  <div className="flex-1">
-                    <Modal.Heading>Bayar Tagihan</Modal.Heading>
-                    {billToPay && (
-                      <p className="text-xs text-default-500 mt-1 font-mono">{billToPay.bill_number}</p>
-                    )}
-                  </div>
-                  <Modal.CloseTrigger />
-                </Modal.Header>
-
-                <Modal.Body className="space-y-4">
-                  {billToPay && (
-                    <div className="rounded-xl border border-border/60 bg-background/40 p-3">
-                      <p className="text-sm font-medium">{billToPay.title}</p>
-                      <p className="text-xs text-default-500 mt-0.5">
-                        Sisa tagihan: <span className="font-semibold text-danger">{formatCurrency(billToPay.amount_outstanding)}</span>
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs text-default-500 mb-1">Tanggal Pembayaran</p>
-                      <Controller
-                        control={paymentForm.control}
-                        name="payment_date"
-                        rules={{ required: 'Tanggal pembayaran wajib diisi' }}
-                        render={({ field }) => (
-                          <TextField fullWidth>
-                            <Input
-                              aria-label="Tanggal pembayaran"
-                              type="date"
-                              value={field.value}
-                              onChange={(event) => field.onChange(event.target.value)}
-                            />
-                          </TextField>
-                        )}
-                      />
-                      {paymentForm.formState.errors.payment_date && (
-                        <p className="text-xs text-danger mt-1">{paymentForm.formState.errors.payment_date.message}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-default-500 mb-1">Metode Pembayaran</p>
-                      <Controller
-                        control={paymentForm.control}
-                        name="payment_method"
-                        render={({ field }) => (
-                          <Select
-                            aria-label="Metode pembayaran"
-                            selectedKey={field.value}
-                            onSelectionChange={(key) => field.onChange(String(key ?? 'cash') as PaymentMethod)}
-                            fullWidth
-                          >
-                            <Select.Trigger>
-                              <Select.Value />
-                              <Select.Indicator />
-                            </Select.Trigger>
-                            <Select.Popover>
-                              <ListBox>
-                                <ListBox.Item id="cash" textValue="Cash">Cash</ListBox.Item>
-                                <ListBox.Item id="transfer" textValue="Transfer">Transfer</ListBox.Item>
-                                <ListBox.Item id="other" textValue="Other">Other</ListBox.Item>
-                              </ListBox>
-                            </Select.Popover>
-                          </Select>
-                        )}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <p className="text-xs text-default-500 mb-1">Nominal Pembayaran</p>
-                      <Controller
-                        control={paymentForm.control}
-                        name="total_amount"
-                        rules={{ required: 'Nominal pembayaran wajib diisi' }}
-                        render={({ field }) => (
-                          <TextField fullWidth>
-                            <Input
-                              aria-label="Nominal pembayaran"
-                              type="number"
-                              min={1}
-                              placeholder="100000"
-                              value={field.value}
-                              onChange={(event) => field.onChange(event.target.value)}
-                            />
-                          </TextField>
-                        )}
-                      />
-                      {paymentForm.formState.errors.total_amount && (
-                        <p className="text-xs text-danger mt-1">{paymentForm.formState.errors.total_amount.message}</p>
-                      )}
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <p className="text-xs text-default-500 mb-1">Nomor Referensi (opsional)</p>
-                      <Controller
-                        control={paymentForm.control}
-                        name="reference_number"
-                        render={({ field }) => (
-                          <TextField fullWidth>
-                            <Input
-                              aria-label="Nomor referensi"
-                              placeholder="REF-001"
-                              value={field.value}
-                              onChange={(event) => field.onChange(event.target.value)}
-                            />
-                          </TextField>
-                        )}
-                      />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <p className="text-xs text-default-500 mb-1">Catatan (opsional)</p>
-                      <Controller
-                        control={paymentForm.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <TextArea
-                            aria-label="Catatan"
-                            placeholder="Catatan pembayaran"
-                            value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
-                          />
-                        )}
-                      />
-                    </div>
-                  </div>
-                </Modal.Body>
-
-                <Modal.Footer>
-                  <Button variant="secondary" type="button" onPress={paymentModalState.close}>
-                    <X className="w-4 h-4 mr-2" />
-                    Batal
-                  </Button>
-                  <Button
-                    variant="primary"
-                    className="bg-accent text-accent-foreground"
-                    type="submit"
-                    isDisabled={createPayment.isPending}
-                  >
-                    {createPayment.isPending ? 'Menyimpan...' : 'Simpan Pembayaran'}
-                  </Button>
-                </Modal.Footer>
-              </form>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
-    </div>
-  )
-}
-
-function BillDetailModal({
-  bill,
-  state,
-  canPay,
-  onPay,
-}: {
-  bill: Bill | null
-  state: ReturnType<typeof useOverlayState>
-  canPay: boolean
-  onPay: (bill: Bill) => void
-}) {
-  if (!bill) {
-    return null
-  }
-
-  const hasDiscount = bill.amount_discount > 0
-  const hasScholarship = Boolean(bill.student_scholarship)
-
-  return (
-    <Modal state={state}>
-      <Modal.Backdrop>
-        <Modal.Container size="lg" placement="center">
-          <Modal.Dialog aria-label="Detail Tagihan">
-            <Modal.Header>
-              <div className="flex-1">
-                <Modal.Heading>Detail Tagihan</Modal.Heading>
-                <p className="text-xs text-default-500 font-mono mt-1">{bill.bill_number}</p>
-              </div>
-              <Modal.CloseTrigger />
-            </Modal.Header>
-
-            <Modal.Body className="space-y-5">
-              <div className="flex items-center justify-between">
-                <Chip size="sm" variant="soft" color={statusConfig[bill.status].color}>
-                  <Chip.Label>{statusConfig[bill.status].label}</Chip.Label>
-                </Chip>
-                {bill.period_month && bill.period_year && (
-                  <span className="text-sm font-medium text-default-500">
-                    {MONTH_NAMES_FULL[bill.period_month - 1]} {bill.period_year}
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <p className="text-lg font-semibold">{bill.title}</p>
-                {bill.description && (
-                  <p className="text-sm text-default-500 mt-1">{bill.description}</p>
-                )}
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <DetailRow label="Jenis Tagihan" value={bill.fee_type?.name ?? '-'} />
-                <DetailRow label="Bruto" value={formatCurrency(bill.amount_gross)} />
-                {hasDiscount && (
-                  <DetailRow
-                    label="Diskon"
-                    value={`- ${formatCurrency(bill.amount_discount)}`}
-                    valueClass="text-success"
-                  />
-                )}
-                {hasScholarship && (
-                  <DetailRow
-                    label="Beasiswa"
-                    value={bill.student_scholarship?.scholarship?.name ?? '-'}
-                  />
-                )}
-                <Separator />
-                <DetailRow label="Netto" value={formatCurrency(bill.amount_net)} bold />
-                <DetailRow
-                  label="Sudah Dibayar"
-                  value={formatCurrency(bill.amount_paid)}
-                  valueClass="text-success"
-                />
-                <DetailRow
-                  label="Sisa"
-                  value={formatCurrency(bill.amount_outstanding)}
-                  valueClass={bill.amount_outstanding > 0 ? 'text-danger' : 'text-success'}
-                  bold
-                />
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                {bill.due_date && (
-                  <DetailRow label="Jatuh Tempo" value={bill.due_date} />
-                )}
-                {bill.issued_at && (
-                  <DetailRow label="Diterbitkan" value={formatDate(bill.issued_at)} />
-                )}
-                {bill.paid_off_at && (
-                  <DetailRow
-                    label="Lunas Pada"
-                    value={formatDate(bill.paid_off_at)}
-                    valueClass="text-success"
-                  />
-                )}
-                {bill.voided_at && (
-                  <DetailRow
-                    label="Divoid Pada"
-                    value={formatDate(bill.voided_at)}
-                    valueClass="text-danger"
-                  />
-                )}
-              </div>
-
-              {bill.allocations.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium mb-2">Riwayat Alokasi Pembayaran</p>
-                    <div className="space-y-1.5">
-                      {bill.allocations.map((allocation) => (
-                        <div
-                          key={allocation.id}
-                          className="flex items-center justify-between rounded-xl bg-background/60 p-2.5"
-                        >
-                          <span className="text-xs text-default-500">Pembayaran #{allocation.finance_payment_id}</span>
-                          <span className="text-sm font-medium text-success">
-                            {formatCurrency(allocation.allocated_amount)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </Modal.Body>
-
-            <Modal.Footer>
-              <Button variant="secondary" onPress={state.close}>
-                <X className="w-4 h-4 mr-2" />
-                Tutup
-              </Button>
-              {canPay && (
-                <Button
-                  variant="primary"
-                  className="bg-accent text-accent-foreground"
-                  onPress={() => onPay(bill)}
-                >
-                  Bayar Tagihan
-                </Button>
-              )}
-            </Modal.Footer>
-          </Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
-  )
-}
-
-function DetailRow({
-  label,
-  value,
-  valueClass,
-  bold,
-}: {
-  label: string
-  value: string
-  valueClass?: string
-  bold?: boolean
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-default-500">{label}</span>
-      <span className={`text-sm ${bold ? 'font-semibold' : 'font-medium'} ${valueClass ?? ''}`}>
-        {value}
-      </span>
+      <PaymentModal
+        state={paymentModalState}
+        bill={billToPay}
+        onSuccess={() => setBillToPay(null)}
+      />
     </div>
   )
 }

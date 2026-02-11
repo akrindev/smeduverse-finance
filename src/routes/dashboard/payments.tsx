@@ -1,14 +1,19 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
-import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
+import { Button, Card, Chip, Input, TextField } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
+import { EmptyState } from '@/components/shared/empty-state'
+import { ErrorState } from '@/components/shared/error-state'
+import { LoadingState } from '@/components/shared/loading-state'
+import { PageHeader } from '@/components/shared/page-header'
+import { StatCard } from '@/components/shared/stat-card'
 import { usePayments } from '@/hooks/use-payments'
+import { formatCurrency } from '@/lib/format'
 import type { Payment } from '@/types/finance'
 import { TablePagination } from '@/lib/table-pagination'
 import {
   cardHeaderClass,
-  pageHeaderClass,
   pageShellClass,
   surfaceCardClass,
   tableBodyCellClass,
@@ -18,14 +23,6 @@ import {
 export const Route = createFileRoute('/dashboard/payments')({
   component: PaymentsPage,
 })
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
 
 const statusConfig: Record<Payment['status'], { label: string; color: 'success' | 'danger' }> = {
   confirmed: { label: 'Terkonfirmasi', color: 'success' },
@@ -79,71 +76,44 @@ function PaymentsPage() {
   const paginatedPayments = table.getRowModel().rows.map((row) => row.original)
 
   if (isLoading) {
-    return (
-      <div className="min-h-[420px] flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   if (error) {
-    return (
-      <Card className="max-w-xl mx-auto border border-danger/20 bg-danger/5">
-        <Card.Content className="p-6">
-          <p className="text-danger font-medium">Gagal memuat data pembayaran.</p>
-          <p className="text-sm text-default-500 mt-1">Silakan coba lagi dalam beberapa saat.</p>
-        </Card.Content>
-      </Card>
-    )
+    return <ErrorState message="Gagal memuat data pembayaran." detail="Silakan coba lagi dalam beberapa saat." />
   }
 
   return (
     <div className={pageShellClass}>
-      <div className={pageHeaderClass}>
-        <div>
-          <h1 className="text-2xl font-semibold">Riwayat Pembayaran</h1>
-          <p className="text-sm text-default-500 mt-1">Data transaksi pembayaran dari Finance API.</p>
-        </div>
+      <PageHeader title="Riwayat Pembayaran" description="Data transaksi pembayaran dari Finance API.">
         <Button variant="secondary">
           <Download className="w-4 h-4 mr-2" />
           Export
         </Button>
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-accent-soft text-accent flex items-center justify-center">
-              <Receipt className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-default-500">Total Transaksi</p>
-              <p className="text-xl font-semibold">{payments.length}</p>
-            </div>
-          </Card.Content>
-        </Card>
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-success/15 text-success flex items-center justify-center">
-              <ArrowDownLeft className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-default-500">Terkonfirmasi</p>
-              <p className="text-xl font-semibold">{confirmedCount}</p>
-            </div>
-          </Card.Content>
-        </Card>
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-danger/15 text-danger flex items-center justify-center">
-              <ArrowUpRight className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-default-500">Total Diterima</p>
-              <p className="text-xl font-semibold">{formatCurrency(confirmedAmount)}</p>
-            </div>
-          </Card.Content>
-        </Card>
+        <StatCard
+          icon={Receipt}
+          iconBgClass="bg-accent-soft"
+          iconColorClass="text-accent"
+          label="Total Transaksi"
+          value={payments.length}
+        />
+        <StatCard
+          icon={ArrowDownLeft}
+          iconBgClass="bg-success/15"
+          iconColorClass="text-success"
+          label="Terkonfirmasi"
+          value={confirmedCount}
+        />
+        <StatCard
+          icon={ArrowUpRight}
+          iconBgClass="bg-danger/15"
+          iconColorClass="text-danger"
+          label="Total Diterima"
+          value={formatCurrency(confirmedAmount)}
+        />
       </div>
 
       <Card className={surfaceCardClass}>
@@ -239,7 +209,7 @@ function PaymentsPage() {
           </div>
 
           {filteredPayments.length === 0 && (
-            <div className="py-10 text-center text-sm text-default-500">Tidak ada data pembayaran.</div>
+            <EmptyState icon={Receipt} message="Tidak ada data pembayaran." />
           )}
 
           <TablePagination

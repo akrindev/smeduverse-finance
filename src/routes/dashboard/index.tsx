@@ -9,14 +9,18 @@ import {
   GraduationCap,
   Wallet,
 } from 'lucide-react'
-import { Button, Card, Chip, Spinner } from '@heroui/react'
+import { Button, Card, Chip } from '@heroui/react'
+import { EmptyState } from '@/components/shared/empty-state'
+import { LoadingState } from '@/components/shared/loading-state'
+import { PageHeader } from '@/components/shared/page-header'
+import { StatCard } from '@/components/shared/stat-card'
 import { useCollectionsReport, useReceivablesReport } from '@/hooks/use-reports'
 import { usePayments } from '@/hooks/use-payments'
 import { useScholarships } from '@/hooks/use-scholarships'
 import { useFinanceHealth } from '@/hooks/use-finance-meta'
+import { formatCurrency } from '@/lib/format'
 import {
   cardHeaderClass,
-  pageHeaderClass,
   pageShellClass,
   surfaceCardClass,
   tableBodyCellClass,
@@ -26,14 +30,6 @@ import {
 export const Route = createFileRoute('/dashboard/')({
   component: DashboardOverview,
 })
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
 
 function DashboardOverview() {
   const { data: receivablesData, isLoading: receivablesLoading } = useReceivablesReport()
@@ -68,20 +64,12 @@ function DashboardOverview() {
   const activeScholarships = (scholarshipsData?.data ?? []).filter((item) => item.is_active).length
 
   if (isLoading) {
-    return (
-      <div className="min-h-[420px] flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <LoadingState />
   }
 
   return (
     <div className={pageShellClass}>
-      <div className={pageHeaderClass}>
-        <div>
-          <h1 className="text-2xl font-semibold">Ringkasan Keuangan</h1>
-          <p className="text-sm text-default-500 mt-1">Data realtime dari Finance API backend.</p>
-        </div>
+      <PageHeader title="Ringkasan Keuangan" description="Data realtime dari Finance API backend.">
         <Chip
           size="sm"
           variant="soft"
@@ -92,60 +80,52 @@ function DashboardOverview() {
             API {healthData?.service ?? 'finance-api'}: {healthData?.status ?? 'unknown'}
           </Chip.Label>
         </Chip>
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-accent-soft text-accent flex items-center justify-center">
-                <Wallet className="w-5 h-5" />
-              </div>
-              <ArrowDownLeft className="w-4 h-4 text-success" />
-            </div>
-            <p className="text-xs text-default-500 mt-4">Total Penerimaan</p>
-            <p className="text-2xl font-semibold mt-1">{formatCurrency(collections.summary.total_collected)}</p>
-          </Card.Content>
-        </Card>
+        <div className="relative">
+          <StatCard
+            icon={Wallet}
+            iconBgClass="bg-accent-soft"
+            iconColorClass="text-accent"
+            label="Total Penerimaan"
+            value={formatCurrency(collections.summary.total_collected)}
+          />
+          <ArrowDownLeft className="w-4 h-4 text-success absolute top-5 right-5" />
+        </div>
 
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-success/15 text-success flex items-center justify-center">
-                <Coins className="w-5 h-5" />
-              </div>
-              <BadgeCheck className="w-4 h-4 text-success" />
-            </div>
-            <p className="text-xs text-default-500 mt-4">Sudah Dibayar</p>
-            <p className="text-2xl font-semibold mt-1">{formatCurrency(receivables.summary.total_paid)}</p>
-          </Card.Content>
-        </Card>
+        <div className="relative">
+          <StatCard
+            icon={Coins}
+            iconBgClass="bg-success/15"
+            iconColorClass="text-success"
+            label="Sudah Dibayar"
+            value={formatCurrency(receivables.summary.total_paid)}
+          />
+          <BadgeCheck className="w-4 h-4 text-success absolute top-5 right-5" />
+        </div>
 
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-warning/15 text-warning flex items-center justify-center">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <ArrowUpRight className="w-4 h-4 text-warning" />
-            </div>
-            <p className="text-xs text-default-500 mt-4">Beasiswa Aktif</p>
-            <p className="text-2xl font-semibold mt-1">{activeScholarships}</p>
-          </Card.Content>
-        </Card>
+        <div className="relative">
+          <StatCard
+            icon={GraduationCap}
+            iconBgClass="bg-warning/15"
+            iconColorClass="text-warning"
+            label="Beasiswa Aktif"
+            value={activeScholarships}
+          />
+          <ArrowUpRight className="w-4 h-4 text-warning absolute top-5 right-5" />
+        </div>
 
-        <Card className={surfaceCardClass}>
-          <Card.Content className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-danger/15 text-danger flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <CreditCard className="w-4 h-4 text-danger" />
-            </div>
-            <p className="text-xs text-default-500 mt-4">Sisa Piutang</p>
-            <p className="text-2xl font-semibold mt-1">{formatCurrency(receivables.summary.total_outstanding)}</p>
-          </Card.Content>
-        </Card>
+        <div className="relative">
+          <StatCard
+            icon={AlertTriangle}
+            iconBgClass="bg-danger/15"
+            iconColorClass="text-danger"
+            label="Sisa Piutang"
+            value={formatCurrency(receivables.summary.total_outstanding)}
+          />
+          <CreditCard className="w-4 h-4 text-danger absolute top-5 right-5" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -197,7 +177,7 @@ function DashboardOverview() {
             </div>
 
             {recentPayments.length === 0 && (
-              <div className="py-10 text-center text-sm text-default-500">Belum ada data pembayaran.</div>
+              <EmptyState icon={CreditCard} message="Belum ada data pembayaran." />
             )}
           </Card.Content>
         </Card>
