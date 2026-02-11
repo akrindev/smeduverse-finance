@@ -14,9 +14,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardSppRouteImport } from './routes/dashboard/spp'
+import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
+import { Route as DashboardFeeTypesRouteImport } from './routes/dashboard/fee-types'
 import { Route as DashboardBeasiswaRouteImport } from './routes/dashboard/beasiswa'
-import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -43,9 +44,19 @@ const DashboardSppRoute = DashboardSppRouteImport.update({
   path: '/spp',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardReportsRoute = DashboardReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardPaymentsRoute = DashboardPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardFeeTypesRoute = DashboardFeeTypesRouteImport.update({
+  id: '/fee-types',
+  path: '/fee-types',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardBeasiswaRoute = DashboardBeasiswaRouteImport.update({
@@ -53,30 +64,27 @@ const DashboardBeasiswaRoute = DashboardBeasiswaRouteImport.update({
   path: '/beasiswa',
   getParentRoute: () => DashboardRoute,
 } as any)
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: '/api/auth/$',
-  path: '/api/auth/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/beasiswa': typeof DashboardBeasiswaRoute
+  '/dashboard/fee-types': typeof DashboardFeeTypesRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard/beasiswa': typeof DashboardBeasiswaRoute
+  '/dashboard/fee-types': typeof DashboardFeeTypesRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard': typeof DashboardIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,10 +92,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/beasiswa': typeof DashboardBeasiswaRoute
+  '/dashboard/fee-types': typeof DashboardFeeTypesRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
+  '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard/': typeof DashboardIndexRoute
-  '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -96,36 +105,38 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/dashboard/beasiswa'
+    | '/dashboard/fee-types'
     | '/dashboard/payments'
+    | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard/'
-    | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard/beasiswa'
+    | '/dashboard/fee-types'
     | '/dashboard/payments'
+    | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard'
-    | '/api/auth/$'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/dashboard'
     | '/dashboard/beasiswa'
+    | '/dashboard/fee-types'
     | '/dashboard/payments'
+    | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard/'
-    | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   DashboardRoute: typeof DashboardRouteWithChildren
-  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -165,11 +176,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardSppRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/reports': {
+      id: '/dashboard/reports'
+      path: '/reports'
+      fullPath: '/dashboard/reports'
+      preLoaderRoute: typeof DashboardReportsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/payments': {
       id: '/dashboard/payments'
       path: '/payments'
       fullPath: '/dashboard/payments'
       preLoaderRoute: typeof DashboardPaymentsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/fee-types': {
+      id: '/dashboard/fee-types'
+      path: '/fee-types'
+      fullPath: '/dashboard/fee-types'
+      preLoaderRoute: typeof DashboardFeeTypesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/beasiswa': {
@@ -179,26 +204,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardBeasiswaRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/api/auth/$': {
-      id: '/api/auth/$'
-      path: '/api/auth/$'
-      fullPath: '/api/auth/$'
-      preLoaderRoute: typeof ApiAuthSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 interface DashboardRouteChildren {
   DashboardBeasiswaRoute: typeof DashboardBeasiswaRoute
+  DashboardFeeTypesRoute: typeof DashboardFeeTypesRoute
   DashboardPaymentsRoute: typeof DashboardPaymentsRoute
+  DashboardReportsRoute: typeof DashboardReportsRoute
   DashboardSppRoute: typeof DashboardSppRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardBeasiswaRoute: DashboardBeasiswaRoute,
+  DashboardFeeTypesRoute: DashboardFeeTypesRoute,
   DashboardPaymentsRoute: DashboardPaymentsRoute,
+  DashboardReportsRoute: DashboardReportsRoute,
   DashboardSppRoute: DashboardSppRoute,
   DashboardIndexRoute: DashboardIndexRoute,
 }
@@ -211,17 +233,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   DashboardRoute: DashboardRouteWithChildren,
-  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

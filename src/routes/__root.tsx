@@ -1,11 +1,4 @@
-import {
-  HeadContent,
-  Outlet,
-  Scripts,
-  createRootRouteWithContext,
-} from '@tanstack/react-router'
-
-import appCss from '../styles.css?url'
+import { Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
 import type { QueryClient } from '@tanstack/react-query'
 
@@ -14,45 +7,9 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: 'Smeduverse Finance',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
-
   component: RootComponent,
-  shellComponent: RootDocument,
 })
 
 function RootComponent() {
   return <Outlet />
-}
-
-function RootDocument({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en" className="light">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  )
 }

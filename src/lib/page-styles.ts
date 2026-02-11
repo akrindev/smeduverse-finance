@@ -1,0 +1,6 @@
+export const pageShellClass = 'mx-auto w-full max-w-7xl space-y-4 sm:space-y-6'
+export const pageHeaderClass = 'flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'
+export const surfaceCardClass = 'border border-border/60 rounded-3xl'
+export const cardHeaderClass = 'px-4 py-4 sm:px-5'
+export const tableHeadCellClass = 'px-4 py-3 text-left font-medium text-default-500 sm:px-5'
+export const tableBodyCellClass = 'px-4 py-3 sm:px-5'

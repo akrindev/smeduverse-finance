@@ -1,342 +1,197 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, Card, Chip, Input, TextField } from '@heroui/react'
+import { ArrowDownLeft, ArrowUpRight, Download, Receipt } from 'lucide-react'
+import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
+import { useMemo, useState } from 'react'
+import { usePayments } from '@/hooks/use-payments'
+import type { Payment } from '@/types/finance'
 import {
-  Search,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  Receipt,
-  ArrowUpRight,
-  ArrowDownLeft,
-} from 'lucide-react'
-import { useState } from 'react'
+  cardHeaderClass,
+  pageHeaderClass,
+  pageShellClass,
+  surfaceCardClass,
+  tableBodyCellClass,
+  tableHeadCellClass,
+} from '@/lib/page-styles'
 
 export const Route = createFileRoute('/dashboard/payments')({
   component: PaymentsPage,
 })
 
-interface Payment {
-  id: string
-  student: string
-  class: string
-  type: string
-  category: 'income' | 'expense'
-  amount: string
-  method: string
-  date: string
-  reference: string
-  status: 'success' | 'pending' | 'failed' | 'refunded'
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(amount)
 }
 
-const payments: Payment[] = [
-  {
-    id: 'PAY-001',
-    student: 'Ahmad Rizki',
-    class: 'XII IPA 1',
-    type: 'SPP Februari',
-    category: 'income',
-    amount: 'Rp 1.500.000',
-    method: 'Transfer Bank',
-    date: '10 Feb 2026 09:30',
-    reference: 'BCA-28371',
-    status: 'success',
-  },
-  {
-    id: 'PAY-002',
-    student: 'Siti Nurhaliza',
-    class: 'XII IPA 2',
-    type: 'Uang Gedung',
-    category: 'income',
-    amount: 'Rp 5.000.000',
-    method: 'Transfer Bank',
-    date: '10 Feb 2026 10:15',
-    reference: 'BNI-93847',
-    status: 'success',
-  },
-  {
-    id: 'PAY-003',
-    student: 'Budi Santoso',
-    class: 'XI IPS 1',
-    type: 'SPP Februari',
-    category: 'income',
-    amount: 'Rp 1.500.000',
-    method: 'Virtual Account',
-    date: '10 Feb 2026 11:00',
-    reference: 'VA-74829',
-    status: 'pending',
-  },
-  {
-    id: 'PAY-004',
-    student: 'Dewi Lestari',
-    class: 'X IPA 1',
-    type: 'Seragam',
-    category: 'income',
-    amount: 'Rp 850.000',
-    method: 'Tunai',
-    date: '09 Feb 2026 08:45',
-    reference: 'CSH-12938',
-    status: 'success',
-  },
-  {
-    id: 'PAY-005',
-    student: 'Maya Sari',
-    class: 'XI IPA 1',
-    type: 'Kegiatan Ekskul',
-    category: 'income',
-    amount: 'Rp 350.000',
-    method: 'QRIS',
-    date: '09 Feb 2026 13:20',
-    reference: 'QR-39281',
-    status: 'success',
-  },
-  {
-    id: 'PAY-006',
-    student: '-',
-    class: '-',
-    type: 'Beasiswa Prestasi',
-    category: 'expense',
-    amount: 'Rp 30.000.000',
-    method: 'Transfer Bank',
-    date: '08 Feb 2026 10:00',
-    reference: 'BSW-00128',
-    status: 'success',
-  },
-  {
-    id: 'PAY-007',
-    student: 'Reza Pratama',
-    class: 'XII IPA 1',
-    type: 'SPP Januari',
-    category: 'income',
-    amount: 'Rp 1.500.000',
-    method: 'Transfer Bank',
-    date: '08 Feb 2026 14:30',
-    reference: 'BCA-19283',
-    status: 'failed',
-  },
-  {
-    id: 'PAY-008',
-    student: 'Farhan Adi',
-    class: 'X IPS 1',
-    type: 'SPP Februari',
-    category: 'income',
-    amount: 'Rp 1.500.000',
-    method: 'Transfer Bank',
-    date: '07 Feb 2026 16:45',
-    reference: 'MDR-82746',
-    status: 'refunded',
-  },
-]
-
-const statusConfig = {
-  success: { label: 'Berhasil', color: 'success' as const },
-  pending: { label: 'Menunggu', color: 'warning' as const },
-  failed: { label: 'Gagal', color: 'danger' as const },
-  refunded: { label: 'Refund', color: 'default' as const },
+const statusConfig: Record<Payment['status'], { label: string; color: 'success' | 'danger' }> = {
+  confirmed: { label: 'Terkonfirmasi', color: 'success' },
+  void: { label: 'Void', color: 'danger' },
 }
 
 function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | Payment['status']>('all')
 
-  const filteredPayments = payments.filter((p) => {
-    const matchSearch =
-      p.student.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.id.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchTab =
-      activeTab === 'all' ||
-      (activeTab === 'income' && p.category === 'income') ||
-      (activeTab === 'expense' && p.category === 'expense')
-    return matchSearch && matchTab
-  })
+  const { data, isLoading, error } = usePayments()
+  const payments = data?.data ?? []
 
-  const totalIncome = payments
-    .filter((p) => p.category === 'income' && p.status === 'success')
-    .length
-  const totalExpense = payments
-    .filter((p) => p.category === 'expense' && p.status === 'success')
-    .length
+  const filteredPayments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+
+    return payments.filter((payment) => {
+      const matchesFilter = activeFilter === 'all' || payment.status === activeFilter
+      const matchesSearch =
+        query.length === 0 ||
+        payment.payment_number.toLowerCase().includes(query) ||
+        payment.student_id.toLowerCase().includes(query) ||
+        (payment.reference_number ?? '').toLowerCase().includes(query)
+
+      return matchesFilter && matchesSearch
+    })
+  }, [activeFilter, payments, searchQuery])
+
+  const confirmedCount = payments.filter((item) => item.status === 'confirmed').length
+  const voidCount = payments.filter((item) => item.status === 'void').length
+  const confirmedAmount = payments
+    .filter((item) => item.status === 'confirmed')
+    .reduce((sum, item) => sum + item.total_amount, 0)
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[420px] flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="max-w-xl mx-auto border border-danger/20 bg-danger/5">
+        <Card.Content className="p-6">
+          <p className="text-danger font-medium">Gagal memuat data pembayaran.</p>
+          <p className="text-sm text-default-500 mt-1">Silakan coba lagi dalam beberapa saat.</p>
+        </Card.Content>
+      </Card>
+    )
+  }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className={pageShellClass}>
+      <div className={pageHeaderClass}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Riwayat Pembayaran
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Seluruh transaksi keuangan sekolah
-          </p>
+          <h1 className="text-2xl font-semibold">Riwayat Pembayaran</h1>
+          <p className="text-sm text-default-500 mt-1">Data transaksi pembayaran dari Finance API.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
+        <Button variant="secondary">
+          <Download className="w-4 h-4 mr-2" />
+          Export
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border border-gray-100 shadow-sm">
-          <Card.Content className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-blue-50">
-                <Receipt className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {payments.length}
-                </p>
-                <p className="text-xs text-gray-500">Total Transaksi</p>
-              </div>
+        <Card className={surfaceCardClass}>
+          <Card.Content className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-accent-soft text-accent flex items-center justify-center">
+              <Receipt className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-default-500">Total Transaksi</p>
+              <p className="text-xl font-semibold">{payments.length}</p>
             </div>
           </Card.Content>
         </Card>
-        <Card className="border border-gray-100 shadow-sm">
-          <Card.Content className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-emerald-50">
-                <ArrowDownLeft className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-emerald-600">
-                  {totalIncome}
-                </p>
-                <p className="text-xs text-gray-500">Pemasukan</p>
-              </div>
+        <Card className={surfaceCardClass}>
+          <Card.Content className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-success/15 text-success flex items-center justify-center">
+              <ArrowDownLeft className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-default-500">Terkonfirmasi</p>
+              <p className="text-xl font-semibold">{confirmedCount}</p>
             </div>
           </Card.Content>
         </Card>
-        <Card className="border border-gray-100 shadow-sm">
-          <Card.Content className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-red-50">
-                <ArrowUpRight className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-red-600">
-                  {totalExpense}
-                </p>
-                <p className="text-xs text-gray-500">Pengeluaran</p>
-              </div>
+        <Card className={surfaceCardClass}>
+          <Card.Content className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-danger/15 text-danger flex items-center justify-center">
+              <ArrowUpRight className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-default-500">Total Diterima</p>
+              <p className="text-xl font-semibold">{formatCurrency(confirmedAmount)}</p>
             </div>
           </Card.Content>
         </Card>
       </div>
 
-      <Card className="border border-gray-100 shadow-sm">
-        <Card.Header className="px-6 py-4">
-          <div className="flex flex-col gap-4 w-full">
-            <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
-              {[
-                { id: 'all', label: 'Semua' },
-                { id: 'income', label: 'Pemasukan' },
-                { id: 'expense', label: 'Pengeluaran' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            <TextField fullWidth>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
-                <Input
-                  placeholder="Cari transaksi..."
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </TextField>
+      <Card className={surfaceCardClass}>
+        <Card.Header className={`${cardHeaderClass} flex flex-col gap-3`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={activeFilter === 'all' ? 'primary' : 'secondary'}
+              className={activeFilter === 'all' ? 'bg-accent text-accent-foreground' : ''}
+              size="sm"
+              onPress={() => setActiveFilter('all')}
+            >
+              Semua
+            </Button>
+            <Button
+              variant={activeFilter === 'confirmed' ? 'primary' : 'secondary'}
+              className={activeFilter === 'confirmed' ? 'bg-accent text-accent-foreground' : ''}
+              size="sm"
+              onPress={() => setActiveFilter('confirmed')}
+            >
+              Terkonfirmasi
+            </Button>
+            <Button
+              variant={activeFilter === 'void' ? 'primary' : 'secondary'}
+              className={activeFilter === 'void' ? 'bg-accent text-accent-foreground' : ''}
+              size="sm"
+              onPress={() => setActiveFilter('void')}
+            >
+              Void
+            </Button>
+            <Chip size="sm" variant="soft" color="default" className="ml-auto">
+              <Chip.Label>{filteredPayments.length} data</Chip.Label>
+            </Chip>
           </div>
+
+          <TextField fullWidth>
+            <Input
+              aria-label="Cari pembayaran"
+              placeholder="Cari nomor pembayaran, student_id, atau referensi"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </TextField>
         </Card.Header>
+
         <Card.Content className="px-0 pb-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-t border-gray-100">
-                  <th className="text-left font-medium text-gray-500 px-6 py-3">
-                    ID
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3">
-                    Jenis
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3 hidden sm:table-cell">
-                    Siswa
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3">
-                    Jumlah
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3 hidden md:table-cell">
-                    Metode
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3 hidden lg:table-cell">
-                    Tanggal
-                  </th>
-                  <th className="text-left font-medium text-gray-500 px-6 py-3">
-                    Status
-                  </th>
+                <tr className="border-t border-border/70">
+                  <th className={tableHeadCellClass}>Nomor</th>
+                  <th className={`${tableHeadCellClass} hidden sm:table-cell`}>Student ID</th>
+                  <th className={tableHeadCellClass}>Metode</th>
+                  <th className={tableHeadCellClass}>Total</th>
+                  <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
+                  <th className={tableHeadCellClass}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPayments.map((payment) => (
-                  <tr
-                    key={payment.id}
-                    className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-6 py-3 font-mono text-xs text-gray-500">
-                      {payment.id}
-                    </td>
-                    <td className="px-6 py-3">
-                      <div className="flex items-center gap-2">
-                        {payment.category === 'income' ? (
-                          <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-500" />
-                        ) : (
-                          <ArrowUpRight className="w-3.5 h-3.5 text-red-500" />
-                        )}
-                        <span className="font-medium text-gray-900">
-                          {payment.type}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-3 text-gray-600 hidden sm:table-cell">
-                      {payment.student}
-                    </td>
-                    <td
-                      className={`px-6 py-3 font-semibold ${
-                        payment.category === 'income'
-                          ? 'text-emerald-600'
-                          : 'text-red-600'
-                      }`}
-                    >
-                      {payment.category === 'expense' ? '- ' : '+ '}
-                      {payment.amount}
-                    </td>
-                    <td className="px-6 py-3 text-gray-500 hidden md:table-cell">
-                      {payment.method}
-                    </td>
-                    <td className="px-6 py-3 text-gray-500 hidden lg:table-cell">
-                      {payment.date}
-                    </td>
-                    <td className="px-6 py-3">
-                      <Chip
-                        size="sm"
-                        color={statusConfig[payment.status].color}
-                        variant="soft"
-                      >
-                        <Chip.Label>
-                          {statusConfig[payment.status].label}
-                        </Chip.Label>
+                  <tr key={payment.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                    <td className={`${tableBodyCellClass} font-mono text-xs`}>{payment.payment_number}</td>
+                    <td className={`${tableBodyCellClass} hidden sm:table-cell`}>{payment.student_id}</td>
+                    <td className={`${tableBodyCellClass} capitalize`}>{payment.payment_method}</td>
+                    <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(payment.total_amount)}</td>
+                    <td className={`${tableBodyCellClass} hidden md:table-cell`}>{payment.payment_date}</td>
+                    <td className={tableBodyCellClass}>
+                      <Chip size="sm" variant="soft" color={statusConfig[payment.status].color}>
+                        <Chip.Label>{statusConfig[payment.status].label}</Chip.Label>
                       </Chip>
                     </td>
                   </tr>
@@ -345,20 +200,18 @@ function PaymentsPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-            <p className="text-sm text-gray-500">
-              Menampilkan {filteredPayments.length} dari {payments.length}{' '}
-              transaksi
-            </p>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" isIconOnly isDisabled>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button variant="outline" size="sm" isIconOnly isDisabled>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          {filteredPayments.length === 0 && (
+            <div className="py-10 text-center text-sm text-default-500">Tidak ada data pembayaran.</div>
+          )}
+        </Card.Content>
+      </Card>
+
+      <Card className={surfaceCardClass}>
+        <Card.Content className="p-4 flex items-center justify-between text-sm">
+          <span className="text-default-500">Transaksi void</span>
+          <Chip size="sm" variant="soft" color="danger">
+            <Chip.Label>{voidCount}</Chip.Label>
+          </Chip>
         </Card.Content>
       </Card>
     </div>
