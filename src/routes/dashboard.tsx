@@ -3,6 +3,9 @@ import { Avatar, Button, Card, Chip, Dropdown, Spinner, Tooltip } from '@heroui/
 import {
   BarChart3,
   Bell,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   GraduationCap,
   LayoutDashboard,
@@ -32,6 +35,7 @@ export const Route = createFileRoute('/dashboard')({
 const navItems = [
   { to: '/dashboard' as const, label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/dashboard/spp' as const, label: 'SPP', icon: Receipt },
+  { to: '/dashboard/student-bills' as const, label: 'Tagihan Siswa', icon: BookOpen },
   { to: '/dashboard/fee-types' as const, label: 'Jenis Biaya', icon: Tag },
   { to: '/dashboard/beasiswa' as const, label: 'Beasiswa', icon: GraduationCap },
   { to: '/dashboard/payments' as const, label: 'Pembayaran', icon: CreditCard },
@@ -49,6 +53,7 @@ function getInitials(name: string): string {
 
 function DashboardLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const navigate = useNavigate()
   const matches = useMatches()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
@@ -94,21 +99,49 @@ function DashboardLayout() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1720px] p-3 sm:p-4 lg:p-5">
         <div className="flex gap-4 lg:gap-5">
-          <aside className="hidden lg:flex lg:flex-col lg:w-[72px] lg:shrink-0">
-            <Card className="h-[calc(100vh-3rem)] rounded-[24px] border border-border/50 bg-surface/90 backdrop-blur-xl">
-              <Card.Content className="h-full py-5 px-2.5 flex flex-col items-center">
-                <div className="w-11 h-11 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-accent/25">
-                  <GraduationCap className="w-5 h-5" />
+          <aside
+            className={`hidden lg:flex lg:flex-col lg:shrink-0 transition-all duration-300 ease-in-out ${
+              sidebarExpanded ? 'lg:w-[200px]' : 'lg:w-[72px]'
+            }`}
+          >
+            <Card className="h-[calc(100vh-3rem)] rounded-[24px] border border-border/50 bg-surface/90 backdrop-blur-xl overflow-hidden">
+              <Card.Content
+                className={`h-full py-5 flex flex-col transition-all duration-300 ${
+                  sidebarExpanded ? 'px-3' : 'px-2.5 items-center'
+                }`}
+              >
+                <div className={`flex items-center ${sidebarExpanded ? 'gap-3 px-1' : 'justify-center'}`}>
+                  <div className="w-11 h-11 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center shadow-lg shadow-accent/25 shrink-0">
+                    <GraduationCap className="w-5 h-5" />
+                  </div>
+                  {sidebarExpanded && (
+                    <span className="font-semibold text-sm text-foreground truncate">Finance</span>
+                  )}
                 </div>
 
-                <div className="mt-8 flex flex-col items-center gap-1.5 flex-1">
+                <div className={`mt-8 flex flex-col gap-1.5 flex-1 ${sidebarExpanded ? '' : 'items-center'}`}>
                   {navItems.map((item) => {
                     const isActive = item.exact
                       ? currentPath === '/dashboard' || currentPath === '/dashboard/'
                       : currentPath.startsWith(item.to)
                     const Icon = item.icon
 
-                    return (
+                    return sidebarExpanded ? (
+                      <Link key={item.to} to={item.to}>
+                        <Button
+                          fullWidth
+                          variant={isActive ? 'primary' : 'ghost'}
+                          className={`h-11 rounded-2xl justify-start gap-3 px-3 ${
+                            isActive
+                              ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25'
+                              : 'text-default-foreground hover:bg-default/60'
+                          }`}
+                        >
+                          <Icon className="w-[18px] h-[18px] shrink-0" />
+                          <span className="text-sm truncate">{item.label}</span>
+                        </Button>
+                      </Link>
+                    ) : (
                       <Tooltip key={item.to}>
                         <Tooltip.Trigger>
                           <Link to={item.to}>
@@ -132,7 +165,26 @@ function DashboardLayout() {
                   })}
                 </div>
 
-                <div className="flex flex-col items-center gap-2 mt-auto">
+                <div className={`flex flex-col gap-2 mt-auto ${sidebarExpanded ? '' : 'items-center'}`}>
+                  <Tooltip>
+                    <Tooltip.Trigger>
+                      <Button
+                        isIconOnly
+                        variant="ghost"
+                        className="w-11 h-11 rounded-2xl text-default-foreground hover:bg-default/60"
+                        aria-label={sidebarExpanded ? 'Tutup sidebar' : 'Buka sidebar'}
+                        onPress={() => setSidebarExpanded(!sidebarExpanded)}
+                      >
+                        {sidebarExpanded ? (
+                          <ChevronLeft className="w-[18px] h-[18px]" />
+                        ) : (
+                          <ChevronRight className="w-[18px] h-[18px]" />
+                        )}
+                      </Button>
+                    </Tooltip.Trigger>
+                    <Tooltip.Content>{sidebarExpanded ? 'Tutup sidebar' : 'Buka sidebar'}</Tooltip.Content>
+                  </Tooltip>
+
                   <Button
                     isIconOnly
                     variant="ghost"
@@ -252,7 +304,7 @@ function DashboardLayout() {
                   </div>
                 </header>
 
-                <main className="flex-1 overflow-auto pb-24 lg:pb-2">
+                <main className="flex-1 overflow-auto pb-16 lg:pb-2">
                   <Outlet />
                 </main>
               </Card.Content>
@@ -261,9 +313,9 @@ function DashboardLayout() {
         </div>
       </div>
 
-      <Card className="fixed bottom-3 left-3 right-3 z-30 rounded-3xl border border-border/50 bg-surface/92 backdrop-blur-xl lg:hidden">
-        <Card.Content className="p-2">
-          <div className="grid grid-cols-6 gap-1">
+      <Card className="fixed bottom-2 left-2 right-2 z-30 rounded-2xl border border-border/50 bg-surface/92 backdrop-blur-xl lg:hidden">
+        <Card.Content className="p-1.5">
+          <div className="grid grid-cols-7 gap-0.5">
             {navItems.map((item) => {
               const isActive = item.exact
                 ? currentPath === '/dashboard' || currentPath === '/dashboard/'
@@ -276,7 +328,7 @@ function DashboardLayout() {
                     fullWidth
                     isIconOnly
                     variant={isActive ? 'primary' : 'ghost'}
-                    className={`h-11 rounded-2xl ${
+                    className={`h-9 rounded-xl ${
                       isActive ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25' : ''
                     }`}
                     aria-label={item.label}
