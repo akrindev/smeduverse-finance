@@ -76,6 +76,52 @@ export interface Student {
   jenis_kelamin?: string | null
 }
 
+export interface Rombel {
+  id: string // UUID
+  rombongan_belajar_id?: string
+  nama?: string | null
+  name?: string | null
+  code?: string | null
+  tingkat_kelas?: number | null
+  jurusan_id?: number | null
+  tahun_ajaran_id?: number | null
+  status_aktif?: boolean | number
+  is_active?: boolean
+  jurusan?: {
+    id?: number
+    nama?: string | null
+    name?: string | null
+    code?: string | null
+  } | null
+  tahun_ajaran?: {
+    id?: number
+    nama?: string | null
+    name?: string | null
+    code?: string | null
+    aktif?: boolean
+    is_active?: boolean
+  } | null
+}
+
+export interface RefStudentsFilters {
+  search?: string
+  active?: boolean
+  jenis_kelamin?: string
+  rombongan_belajar_id?: string
+  page?: number
+  per_page?: number
+}
+
+export interface RefRombelsFilters {
+  search?: string
+  jurusan_id?: number
+  tahun_ajaran_id?: number
+  tingkat_kelas?: number
+  active_only?: boolean
+  page?: number
+  per_page?: number
+}
+
 // ── Fee Types ───────────────────────────────────────────────
 
 export type BillingCycle = 'monthly' | 'one_time' | 'custom'

@@ -10,14 +10,15 @@ import {
   useOverlayState,
 } from '@heroui/react'
 import { Controller, useForm } from 'react-hook-form'
+import { StudentSearchSelect } from '@/components/shared/student-search-select'
 import { useGenerateFee } from '@/hooks/use-bills'
 import { useFeeTypes } from '@/hooks/use-fee-types'
 import { ApiResponseError } from '@/lib/api-client'
-import { firstValidationMessage, parseStudentIds } from '@/lib/format'
+import { firstValidationMessage } from '@/lib/format'
 
 export interface GenerateFeeFormValues {
   finance_fee_type_id: string
-  student_ids: string
+  student_ids: string[]
   amount: string
   due_date: string
   title: string
@@ -37,7 +38,7 @@ export function GenerateFeeModal({ state }: GenerateFeeModalProps) {
   const form = useForm<GenerateFeeFormValues>({
     defaultValues: {
       finance_fee_type_id: '',
-      student_ids: '',
+      student_ids: [],
       amount: '',
       due_date: '',
       title: '',
@@ -52,7 +53,7 @@ export function GenerateFeeModal({ state }: GenerateFeeModalProps) {
     const amount = Number(values.amount)
     const month = values.period_month ? Number(values.period_month) : undefined
     const year = values.period_year ? Number(values.period_year) : undefined
-    const studentIds = parseStudentIds(values.student_ids)
+    const studentIds = values.student_ids
 
     if (!Number.isFinite(feeTypeId) || feeTypeId < 1) {
       form.setError('finance_fee_type_id', { message: 'Jenis tagihan wajib dipilih' })
@@ -60,7 +61,7 @@ export function GenerateFeeModal({ state }: GenerateFeeModalProps) {
     }
 
     if (!studentIds || studentIds.length === 0) {
-      form.setError('student_ids', { message: 'Isi minimal satu Student UUID' })
+      form.setError('student_ids', { message: 'Pilih minimal satu siswa' })
       return
     }
 
@@ -95,7 +96,7 @@ export function GenerateFeeModal({ state }: GenerateFeeModalProps) {
       state.close()
       form.reset({
         finance_fee_type_id: '',
-        student_ids: '',
+        student_ids: [],
         amount: '',
         due_date: '',
         title: '',
@@ -160,20 +161,18 @@ export function GenerateFeeModal({ state }: GenerateFeeModalProps) {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="text-xs text-default-500 mb-1">Student UUID (pisahkan koma)</p>
+                    <p className="text-xs text-default-500 mb-1">Siswa</p>
                     <Controller
                       control={form.control}
                       name="student_ids"
-                      rules={{ required: 'Student UUID wajib diisi' }}
+                      rules={{
+                        validate: (value) => value.length > 0 || 'Pilih minimal satu siswa',
+                      }}
                       render={({ field }) => (
-                        <TextField fullWidth>
-                          <Input
-                            aria-label="Student UUID"
-                            placeholder="uuid-1, uuid-2"
-                            value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
-                          />
-                        </TextField>
+                        <StudentSearchSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
                       )}
                     />
                     {form.formState.errors.student_ids && (

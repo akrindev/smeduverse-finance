@@ -1,13 +1,13 @@
-import { createFileRoute, Outlet, redirect, useMatches, useNavigate } from '@tanstack/react-router'
-import { Card, Spinner } from '@heroui/react'
-import { useEffect, useMemo, useState } from 'react'
 import { DashboardHeader } from '@/components/layouts/dashboard-header'
 import { DashboardSidebar } from '@/components/layouts/dashboard-sidebar'
 import { MobileBottomNav } from '@/components/layouts/mobile-bottom-nav'
-import { useAuth } from '@/lib/auth'
 import { isAuthenticated } from '@/lib/api-client'
+import { useAuth } from '@/lib/auth'
 import { useAuthStore } from '@/lib/auth-store'
 import { getInitials, navItems } from '@/lib/nav-items'
+import { Card, Spinner } from '@heroui/react'
+import { createFileRoute, Outlet, redirect, useMatches, useNavigate } from '@tanstack/react-router'
+import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: () => {
@@ -22,7 +22,7 @@ export const Route = createFileRoute('/dashboard')({
 
 function DashboardLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const navigate = useNavigate()
   const matches = useMatches()
   const { user, isAuthenticated, isLoading, logout } = useAuth()

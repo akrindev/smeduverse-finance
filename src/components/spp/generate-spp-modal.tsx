@@ -1,16 +1,25 @@
 import {
   Button,
+  ComboBox,
   Input,
+  ListBox,
   Modal,
+  Spinner,
   TextArea,
   TextField,
   toast,
   useOverlayState,
 } from '@heroui/react'
+import { X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { StudentSearchSelect } from '@/components/shared/student-search-select'
 import { useGenerateSpp } from '@/hooks/use-bills'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useRefRombels } from '@/hooks/use-references'
 import { ApiResponseError } from '@/lib/api-client'
-import { firstValidationMessage, parseStudentIds } from '@/lib/format'
+import { firstValidationMessage } from '@/lib/format'
+import type { Rombel } from '@/types/finance'
 
 export interface GenerateSppFormValues {
   rombongan_belajar_id: string
@@ -20,11 +29,55 @@ export interface GenerateSppFormValues {
   due_date: string
   title: string
   description: string
-  student_ids: string
+  student_ids: string[]
 }
 
 interface GenerateSppModalProps {
   state: ReturnType<typeof useOverlayState>
+}
+
+const MIN_ROMBEL_SEARCH_LENGTH = 2
+
+function getRombelId(rombel: Rombel): string {
+  return rombel.rombongan_belajar_id ?? rombel.id
+}
+
+function rombelLabel(rombel: Rombel): string {
+  if (rombel.nama && rombel.nama.trim().length > 0) {
+    return rombel.nama
+  }
+
+  if (rombel.name && rombel.name.trim().length > 0) {
+    return rombel.name
+  }
+
+  if (rombel.code && rombel.code.trim().length > 0) {
+    return rombel.code
+  }
+
+  return getRombelId(rombel)
+}
+
+function rombelSubtitle(rombel: Rombel): string {
+  const parts: string[] = []
+
+  if (rombel.tingkat_kelas) {
+    parts.push(`Kelas ${rombel.tingkat_kelas}`)
+  }
+
+  if (rombel.jurusan?.name) {
+    parts.push(rombel.jurusan.name)
+  } else if (rombel.jurusan?.nama) {
+    parts.push(rombel.jurusan.nama)
+  }
+
+  if (rombel.tahun_ajaran?.name) {
+    parts.push(rombel.tahun_ajaran.name)
+  } else if (rombel.tahun_ajaran?.nama) {
+    parts.push(rombel.tahun_ajaran.nama)
+  }
+
+  return parts.join(' | ')
 }
 
 export function GenerateSppModal({ state }: GenerateSppModalProps) {
@@ -39,9 +92,45 @@ export function GenerateSppModal({ state }: GenerateSppModalProps) {
       due_date: '',
       title: '',
       description: '',
-      student_ids: '',
+      student_ids: [],
     },
   })
+  const [rombelSearchValue, setRombelSearchValue] = useState('')
+  const [rombelCache, setRombelCache] = useState<Record<string, Rombel>>({})
+  const debouncedRombelSearchValue = useDebouncedValue(rombelSearchValue.trim(), 300)
+
+  const shouldQueryRombels = debouncedRombelSearchValue.length >= MIN_ROMBEL_SEARCH_LENGTH
+
+  const { data: rombelsData, isFetching: rombelsLoading } = useRefRombels(
+    {
+      search: shouldQueryRombels ? debouncedRombelSearchValue : undefined,
+      active_only: true,
+      per_page: 15,
+    },
+    { enabled: shouldQueryRombels },
+  )
+
+  const rombels = rombelsData?.data ?? []
+
+  useEffect(() => {
+    if (rombels.length === 0) {
+      return
+    }
+
+    setRombelCache((previous) => {
+      const next = { ...previous }
+      for (const rombel of rombels) {
+        next[getRombelId(rombel)] = rombel
+      }
+      return next
+    })
+  }, [rombels])
+
+  const selectedRombelId = form.watch('rombongan_belajar_id')
+  const selectedRombel = useMemo(
+    () => (selectedRombelId ? rombelCache[selectedRombelId] ?? null : null),
+    [rombelCache, selectedRombelId],
+  )
 
   const submit = form.handleSubmit(async (values) => {
     const month = Number(values.period_month)
@@ -72,7 +161,7 @@ export function GenerateSppModal({ state }: GenerateSppModalProps) {
         due_date: values.due_date || undefined,
         title: values.title || undefined,
         description: values.description || undefined,
-        student_ids: parseStudentIds(values.student_ids),
+        student_ids: values.student_ids.length > 0 ? values.student_ids : undefined,
       })
 
       toast.success(`Generate SPP selesai. Dibuat ${response.created_count}, dilewati ${response.skipped_count}.`)
@@ -83,7 +172,7 @@ export function GenerateSppModal({ state }: GenerateSppModalProps) {
         due_date: '',
         title: '',
         description: '',
-        student_ids: '',
+        student_ids: [],
       })
     } catch (err) {
       if (err instanceof ApiResponseError) {
@@ -107,21 +196,104 @@ export function GenerateSppModal({ state }: GenerateSppModalProps) {
               </Modal.Header>
               <Modal.Body className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs text-default-500 mb-1">Rombongan Belajar ID</p>
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-default-500 mb-1">Rombongan Belajar</p>
                     <Controller
                       control={form.control}
                       name="rombongan_belajar_id"
                       rules={{ required: 'Rombongan belajar wajib diisi' }}
                       render={({ field }) => (
-                        <TextField fullWidth>
-                          <Input
-                            aria-label="Rombongan Belajar ID"
-                            placeholder="UUID rombel"
-                            value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
-                          />
-                        </TextField>
+                        <div className="space-y-2">
+                          <ComboBox
+                            aria-label="Cari rombongan belajar"
+                            selectedKey={null}
+                            onSelectionChange={(key) => {
+                              if (!key) {
+                                return
+                              }
+
+                              const rombelId = String(key)
+                              field.onChange(rombelId)
+                              form.setValue('student_ids', [])
+                              setRombelSearchValue('')
+                            }}
+                            inputValue={rombelSearchValue}
+                            onInputChange={setRombelSearchValue}
+                            allowsEmptyCollection
+                            menuTrigger="input"
+                            fullWidth
+                          >
+                            <ComboBox.InputGroup>
+                              <Input placeholder="Cari nama atau kode rombel" />
+                              <ComboBox.Trigger />
+                            </ComboBox.InputGroup>
+                            <ComboBox.Popover>
+                              <ListBox
+                                aria-label="Hasil pencarian rombel"
+                                renderEmptyState={() => (
+                                  <div className="px-3 py-2 text-xs text-default-500">
+                                    {!shouldQueryRombels
+                                      ? `Ketik minimal ${MIN_ROMBEL_SEARCH_LENGTH} karakter`
+                                      : rombelsLoading
+                                        ? 'Mencari rombel...'
+                                        : 'Rombel tidak ditemukan'}
+                                  </div>
+                                )}
+                              >
+                                {rombels.map((rombel) => {
+                                  const rombelId = getRombelId(rombel)
+                                  const subtitle = rombelSubtitle(rombel)
+                                  return (
+                                    <ListBox.Item
+                                      key={rombelId}
+                                      id={rombelId}
+                                      textValue={`${rombelLabel(rombel)} ${subtitle}`}
+                                      isDisabled={field.value === rombelId}
+                                    >
+                                      <div className="flex flex-col">
+                                        <span className="text-sm text-foreground">{rombelLabel(rombel)}</span>
+                                        {subtitle && (
+                                          <span className="text-xs text-default-500">{subtitle}</span>
+                                        )}
+                                      </div>
+                                    </ListBox.Item>
+                                  )
+                                })}
+                              </ListBox>
+                            </ComboBox.Popover>
+                          </ComboBox>
+
+                          {rombelsLoading && shouldQueryRombels && (
+                            <div className="flex items-center gap-2 text-xs text-default-500">
+                              <Spinner size="sm" />
+                              Memuat data rombel...
+                            </div>
+                          )}
+
+                          {field.value && (
+                            <div className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-1">
+                              <span className="text-xs text-foreground">
+                                {selectedRombel ? rombelLabel(selectedRombel) : field.value}
+                              </span>
+                              {selectedRombel && rombelSubtitle(selectedRombel) && (
+                                <span className="text-xs text-default-500">{rombelSubtitle(selectedRombel)}</span>
+                              )}
+                              <Button
+                                size="sm"
+                                isIconOnly
+                                variant="ghost"
+                                className="h-5 w-5 min-w-0"
+                                aria-label="Hapus rombel terpilih"
+                                onPress={() => {
+                                  field.onChange('')
+                                  form.setValue('student_ids', [])
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       )}
                     />
                     {form.formState.errors.rombongan_belajar_id && (
@@ -235,21 +407,22 @@ export function GenerateSppModal({ state }: GenerateSppModalProps) {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="text-xs text-default-500 mb-1">Student UUID (opsional, pisahkan koma)</p>
+                    <p className="text-xs text-default-500 mb-1">Siswa (opsional)</p>
                     <Controller
                       control={form.control}
                       name="student_ids"
                       render={({ field }) => (
-                        <TextField fullWidth>
-                          <Input
-                            aria-label="Student UUID"
-                            placeholder="uuid-1, uuid-2"
-                            value={field.value}
-                            onChange={(event) => field.onChange(event.target.value)}
-                          />
-                        </TextField>
+                        <StudentSearchSelect
+                          value={field.value}
+                          onChange={field.onChange}
+                          rombonganBelajarId={selectedRombelId || undefined}
+                          isDisabled={!selectedRombelId}
+                        />
                       )}
                     />
+                    {!selectedRombelId && (
+                      <p className="text-xs text-default-500 mt-1">Pilih rombel terlebih dahulu untuk mencari siswa.</p>
+                    )}
                   </div>
 
                   <div className="sm:col-span-2">
