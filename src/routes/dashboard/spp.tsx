@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Download, Plus } from 'lucide-react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { Download, ExternalLink, Plus } from 'lucide-react'
 import {
   Button,
   Card,
@@ -186,6 +186,7 @@ function SPPPage() {
                   <th className={tableHeadCellClass}>Netto</th>
                   <th className={`${tableHeadCellClass} hidden md:table-cell`}>Sisa</th>
                   <th className={tableHeadCellClass}>Status</th>
+                    <th className={tableHeadCellClass}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -214,6 +215,16 @@ function SPPPage() {
                       <Chip size="sm" variant="soft" color={statusConfig[bill.status].color}>
                         <Chip.Label>{statusConfig[bill.status].label}</Chip.Label>
                       </Chip>
+                    </td>
+                    <td className={tableBodyCellClass}>
+                      <Link
+                        to="/dashboard/student-bills"
+                        search={{ student_id: bill.student_id }}
+                      >
+                        <Button size="sm" variant="ghost" isIconOnly aria-label="Lihat tagihan siswa">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
                     </td>
                   </tr>
                 ))}

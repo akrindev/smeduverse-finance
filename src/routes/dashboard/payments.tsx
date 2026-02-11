@@ -1,5 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { ArrowDownLeft, ArrowUpRight, Download, Receipt } from 'lucide-react'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
 import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
 import { useMemo, useState } from 'react'
 import { usePayments } from '@/hooks/use-payments'
@@ -182,6 +182,7 @@ function PaymentsPage() {
                   <th className={tableHeadCellClass}>Total</th>
                   <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
                   <th className={tableHeadCellClass}>Status</th>
+                    <th className={tableHeadCellClass}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -203,6 +204,16 @@ function PaymentsPage() {
                       <Chip size="sm" variant="soft" color={statusConfig[payment.status].color}>
                         <Chip.Label>{statusConfig[payment.status].label}</Chip.Label>
                       </Chip>
+                    </td>
+                    <td className={tableBodyCellClass}>
+                      <Link
+                        to="/dashboard/student-bills"
+                        search={{ student_id: payment.student_id }}
+                      >
+                        <Button size="sm" variant="ghost" isIconOnly aria-label="Lihat tagihan siswa">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
                     </td>
                   </tr>
                 ))}
