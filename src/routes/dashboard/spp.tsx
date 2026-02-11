@@ -151,16 +151,25 @@ function SPPPage() {
             <div className="w-full sm:w-[220px]">
               <Select
                 aria-label="Filter status tagihan"
-                placeholder="Pilih status"
-                value={filterStatus}
-                onChange={(value) => setFilterStatus((value ?? 'all') as 'all' | BillStatus)}
+                selectedKey={filterStatus}
+                onSelectionChange={(key) =>
+                  setFilterStatus((key ?? 'all') as 'all' | BillStatus)
+                }
                 fullWidth
               >
-                <ListBox.Item id="all" textValue="Semua status">Semua status</ListBox.Item>
-                <ListBox.Item id="unpaid" textValue="Belum bayar">Belum bayar</ListBox.Item>
-                <ListBox.Item id="partial" textValue="Sebagian">Sebagian</ListBox.Item>
-                <ListBox.Item id="paid" textValue="Lunas">Lunas</ListBox.Item>
-                <ListBox.Item id="void" textValue="Void">Void</ListBox.Item>
+                <Select.Trigger>
+                  <Select.Value />
+                  <Select.Indicator />
+                </Select.Trigger>
+                <Select.Popover>
+                  <ListBox>
+                    <ListBox.Item id="all" textValue="Semua status">Semua status</ListBox.Item>
+                    <ListBox.Item id="unpaid" textValue="Belum bayar">Belum bayar</ListBox.Item>
+                    <ListBox.Item id="partial" textValue="Sebagian">Sebagian</ListBox.Item>
+                    <ListBox.Item id="paid" textValue="Lunas">Lunas</ListBox.Item>
+                    <ListBox.Item id="void" textValue="Void">Void</ListBox.Item>
+                  </ListBox>
+                </Select.Popover>
               </Select>
             </div>
           </div>
