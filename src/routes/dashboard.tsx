@@ -10,11 +10,16 @@ import { createFileRoute, Outlet, redirect, useMatches, useNavigate } from '@tan
 import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     const hasSession = isAuthenticated() || !!useAuthStore.getState().token
 
     if (!hasSession) {
-      throw redirect({ to: '/auth' })
+      throw redirect({
+        to: '/auth',
+        search: {
+          redirect: `${location.pathname}${location.search}`,
+        },
+      })
     }
   },
   component: DashboardLayout,
@@ -31,7 +36,12 @@ function DashboardLayout() {
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
-      navigate({ to: '/auth' })
+      navigate({
+        to: '/auth',
+        search: {
+          redirect: `${window.location.pathname}${window.location.search}`,
+        },
+      })
     }
   }, [isAuthenticated, isLoading, navigate])
 

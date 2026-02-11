@@ -25,6 +25,7 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   return (
     <aside
+      data-testid="dashboard-sidebar"
       className={`hidden lg:flex lg:flex-col lg:shrink-0 transition-all duration-300 ease-in-out ${
         sidebarExpanded ? 'lg:w-[200px]' : 'lg:w-[72px]'
       }`}
@@ -52,6 +53,7 @@ export function DashboardSidebar({
               return sidebarExpanded ? (
                 <Link key={item.to} to={item.to}>
                   <Button
+                    data-testid="sidebar-nav-item"
                     fullWidth
                     variant={isActive ? 'primary' : 'ghost'}
                     className={`h-11 rounded-2xl justify-start gap-3 px-3 ${
@@ -69,6 +71,7 @@ export function DashboardSidebar({
                   <Tooltip.Trigger>
                     <Link to={item.to}>
                       <Button
+                        data-testid="sidebar-nav-item"
                         isIconOnly
                         variant={isActive ? 'primary' : 'ghost'}
                         className={`w-11 h-11 rounded-2xl ${

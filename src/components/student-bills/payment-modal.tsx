@@ -15,6 +15,7 @@ import { useEffect } from 'react'
 import { useCreatePayment } from '@/hooks/use-payments'
 import { ApiResponseError } from '@/lib/api-client'
 import { firstValidationMessage, formatCurrency, todayDateString } from '@/lib/format'
+import { validatePaymentAmount } from '@/lib/tagihan-siswa'
 import type { Bill, PaymentMethod } from '@/types/finance'
 
 export interface CreatePaymentFormValues {
@@ -60,13 +61,9 @@ export function PaymentModal({ state, bill, onSuccess }: PaymentModalProps) {
     }
 
     const amount = Number(values.total_amount)
-    if (!Number.isFinite(amount) || amount < 1) {
-      form.setError('total_amount', { message: 'Nominal pembayaran harus lebih dari 0' })
-      return
-    }
-
-    if (amount > bill.amount_outstanding) {
-      form.setError('total_amount', { message: 'Nominal melebihi sisa tagihan' })
+    const amountError = validatePaymentAmount(amount, bill.amount_outstanding)
+    if (amountError) {
+      form.setError('total_amount', { message: amountError })
       return
     }
 
@@ -135,7 +132,7 @@ export function PaymentModal({ state, bill, onSuccess }: PaymentModalProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-xs text-default-500 mb-1">Tanggal Pembayaran</p>
-                    <Controller
+                  <Controller
                       control={form.control}
                       name="payment_date"
                       rules={{ required: 'Tanggal pembayaran wajib diisi' }}
@@ -192,6 +189,7 @@ export function PaymentModal({ state, bill, onSuccess }: PaymentModalProps) {
                       render={({ field }) => (
                         <TextField fullWidth>
                           <Input
+                            data-testid="payment-amount-input"
                             aria-label="Nominal pembayaran"
                             type="number"
                             min={1}
@@ -203,7 +201,7 @@ export function PaymentModal({ state, bill, onSuccess }: PaymentModalProps) {
                       )}
                     />
                     {form.formState.errors.total_amount && (
-                      <p className="text-xs text-danger mt-1">{form.formState.errors.total_amount.message}</p>
+                      <p data-testid="payment-amount-error" className="text-xs text-danger mt-1">{form.formState.errors.total_amount.message}</p>
                     )}
                   </div>
 
@@ -249,6 +247,7 @@ export function PaymentModal({ state, bill, onSuccess }: PaymentModalProps) {
                   Batal
                 </Button>
                 <Button
+                  data-testid="payment-submit-button"
                   variant="primary"
                   className="bg-accent text-accent-foreground"
                   type="submit"

@@ -10,7 +10,12 @@ export function MobileBottomNav({ currentPath }: MobileBottomNavProps) {
   return (
     <Card className="fixed bottom-2 left-2 right-2 z-30 rounded-2xl border border-border/50 bg-surface/92 backdrop-blur-xl lg:hidden">
       <Card.Content className="p-1.5">
-        <div className="grid grid-cols-7 gap-0.5">
+        <div
+          className="grid gap-0.5"
+          style={{
+            gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
+          }}
+        >
           {navItems.map((item) => {
             const isActive = item.exact
               ? currentPath === '/dashboard' || currentPath === '/dashboard/'

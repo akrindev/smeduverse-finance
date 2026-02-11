@@ -20,12 +20,16 @@ import { useAuth } from '@/lib/auth'
 import { ApiResponseError } from '@/lib/api-client'
 
 export const Route = createFileRoute('/auth')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
   component: AuthPage,
 })
 
 function AuthPage() {
+  const { redirect: redirectPath } = Route.useSearch()
   const navigate = useNavigate()
-  const { login, isLoading, isAuthenticated } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [email, setEmail] = useState('')
@@ -35,9 +39,14 @@ function AuthPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      if (redirectPath && redirectPath.startsWith('/dashboard')) {
+        window.location.href = redirectPath
+        return
+      }
+
       navigate({ to: '/dashboard' })
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, navigate, redirectPath])
 
   const handleLogin = async () => {
     setIsSubmitting(true)
@@ -46,7 +55,11 @@ function AuthPage() {
 
     try {
       await login({ email, password })
-      navigate({ to: '/dashboard' })
+      if (redirectPath && redirectPath.startsWith('/dashboard')) {
+        window.location.href = redirectPath
+      } else {
+        navigate({ to: '/dashboard' })
+      }
     } catch (err) {
       if (err instanceof ApiResponseError) {
         if (err.errors) {

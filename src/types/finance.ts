@@ -74,6 +74,7 @@ export interface Student {
   nipd: string | null
   nisn: string | null
   jenis_kelamin?: string | null
+  rombel_aktif?: Rombel[]
 }
 
 export interface Rombel {
@@ -87,6 +88,17 @@ export interface Rombel {
   tahun_ajaran_id?: number | null
   status_aktif?: boolean | number
   is_active?: boolean
+  image?: string | null
+  anggota_count?: number
+  wali_id?: string | null
+  wali_kelas?: {
+    teacher_id?: string | null
+    fullname?: string | null
+  } | null
+  pivot?: {
+    student_id?: string
+    rombongan_belajar_id?: string
+  } | null
   jurusan?: {
     id?: number
     nama?: string | null
@@ -402,7 +414,7 @@ export interface ReceivablesSummary {
 export interface ReceivablesByStatus {
   status: BillStatus
   total_bills: number
-  total_outstanding: number
+  total_outstanding: number | string
 }
 
 export interface ReceivablesReport {

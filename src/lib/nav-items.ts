@@ -4,13 +4,12 @@ import {
   CreditCard,
   GraduationCap,
   LayoutDashboard,
-  Receipt,
   Tag,
   type LucideIcon,
 } from 'lucide-react'
 
 interface NavItem {
-  to: '/dashboard' | '/dashboard/spp' | '/dashboard/student-bills' | '/dashboard/fee-types' | '/dashboard/beasiswa' | '/dashboard/payments' | '/dashboard/reports'
+  to: '/dashboard' | '/dashboard/student-bills' | '/dashboard/fee-types' | '/dashboard/beasiswa' | '/dashboard/payments' | '/dashboard/reports'
   label: string
   icon: LucideIcon
   exact?: boolean
@@ -18,7 +17,6 @@ interface NavItem {
 
 export const navItems: readonly NavItem[] = [
   { to: '/dashboard' as const, label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { to: '/dashboard/spp' as const, label: 'SPP', icon: Receipt },
   { to: '/dashboard/student-bills' as const, label: 'Tagihan Siswa', icon: BookOpen },
   { to: '/dashboard/fee-types' as const, label: 'Jenis Biaya', icon: Tag },
   { to: '/dashboard/beasiswa' as const, label: 'Beasiswa', icon: GraduationCap },

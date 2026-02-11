@@ -23,7 +23,7 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
     <Modal state={state}>
       <Modal.Backdrop>
         <Modal.Container size="lg" placement="center">
-          <Modal.Dialog aria-label="Detail Tagihan">
+          <Modal.Dialog aria-label="Detail Tagihan" data-testid="bill-detail-modal">
             <Modal.Header>
               <div className="flex-1">
                 <Modal.Heading>Detail Tagihan</Modal.Heading>
@@ -100,7 +100,12 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
                 Tutup
               </Button>
               {canPay && (
-                <Button variant="primary" className="bg-accent text-accent-foreground" onPress={() => onPay(bill)}>
+                <Button
+                  data-testid="pay-bill-button"
+                  variant="primary"
+                  className="bg-accent text-accent-foreground"
+                  onPress={() => onPay(bill)}
+                >
                   Bayar Tagihan
                 </Button>
               )}
