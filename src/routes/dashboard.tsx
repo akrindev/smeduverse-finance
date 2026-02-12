@@ -17,7 +17,7 @@ export const Route = createFileRoute('/dashboard')({
       throw redirect({
         to: '/auth',
         search: {
-          redirect: `${location.pathname}${location.search}`,
+          redirect: `${location.pathname}${location.searchStr}`,
         },
       })
     }

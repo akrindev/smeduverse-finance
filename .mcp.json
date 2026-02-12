@@ -2,6 +2,7 @@
   "mcpServers": {
     "heroui-react": {
       "command": "npx",
+      "enabled": false,
       "args": ["-y", "@heroui/react-mcp@latest"]
     }
   }

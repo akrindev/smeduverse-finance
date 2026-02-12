@@ -90,6 +90,7 @@ export interface Rombel {
   is_active?: boolean
   image?: string | null
   anggota_count?: number
+  summary?: ReceivablesSummary | null
   wali_id?: string | null
   wali_kelas?: {
     teacher_id?: string | null
