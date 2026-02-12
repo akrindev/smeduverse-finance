@@ -1,9 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import {
   AlertTriangle,
-  ArrowDownLeft,
-  ArrowUpRight,
-  BadgeCheck,
   Coins,
   CreditCard,
   GraduationCap,
@@ -83,49 +80,37 @@ function DashboardOverview() {
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="relative">
-          <StatCard
-            icon={Wallet}
-            iconBgClass="bg-accent-soft"
-            iconColorClass="text-accent"
-            label="Total Penerimaan"
-            value={formatCurrency(collections.summary.total_collected)}
-          />
-          <ArrowDownLeft className="w-4 h-4 text-success absolute top-5 right-5" />
-        </div>
+        <StatCard
+          icon={Wallet}
+          iconBgClass="bg-accent-soft"
+          iconColorClass="text-accent"
+          label="Total Penerimaan"
+          value={formatCurrency(collections.summary.total_collected)}
+        />
 
-        <div className="relative">
-          <StatCard
-            icon={Coins}
-            iconBgClass="bg-success/15"
-            iconColorClass="text-success"
-            label="Sudah Dibayar"
-            value={formatCurrency(receivables.summary.total_paid)}
-          />
-          <BadgeCheck className="w-4 h-4 text-success absolute top-5 right-5" />
-        </div>
+        <StatCard
+          icon={Coins}
+          iconBgClass="bg-success/15"
+          iconColorClass="text-success"
+          label="Sudah Dibayar"
+          value={formatCurrency(receivables.summary.total_paid)}
+        />
 
-        <div className="relative">
-          <StatCard
-            icon={GraduationCap}
-            iconBgClass="bg-warning/15"
-            iconColorClass="text-warning"
-            label="Beasiswa Aktif"
-            value={activeScholarships}
-          />
-          <ArrowUpRight className="w-4 h-4 text-warning absolute top-5 right-5" />
-        </div>
+        <StatCard
+          icon={GraduationCap}
+          iconBgClass="bg-warning/15"
+          iconColorClass="text-warning"
+          label="Beasiswa Aktif"
+          value={activeScholarships}
+        />
 
-        <div className="relative">
-          <StatCard
-            icon={AlertTriangle}
-            iconBgClass="bg-danger/15"
-            iconColorClass="text-danger"
-            label="Sisa Piutang"
-            value={formatCurrency(receivables.summary.total_outstanding)}
-          />
-          <CreditCard className="w-4 h-4 text-danger absolute top-5 right-5" />
-        </div>
+        <StatCard
+          icon={AlertTriangle}
+          iconBgClass="bg-danger/15"
+          iconColorClass="text-danger"
+          label="Sisa Piutang"
+          value={formatCurrency(receivables.summary.total_outstanding)}
+        />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">

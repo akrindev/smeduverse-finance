@@ -352,16 +352,17 @@ function SummaryCard({
   value: string
 }) {
   return (
-    <Card className={surfaceCardClass}>
-      <Card.Content className="flex items-center gap-3">
-        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${iconBgClass}`}>
-          <Icon className={`h-5 w-5 ${iconColorClass}`} />
+    <Card className="border border-border/50 shadow-sm bg-surface/50 backdrop-blur-sm">
+      <Card.Content className="flex items-center gap-4">
+        <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${iconBgClass} ${iconColorClass} shadow-inner`}>
+          <Icon className={`w-6 h-6 ${iconColorClass}`} />
         </div>
-        <div>
-          <p className="text-default-500 text-sm">{label}</p>
-          <p className="font-semibold text-foreground text-lg">{value}</p>
+        <div className="flex flex-col min-w-0">
+          <p className="text-xs font-medium text-default-500 uppercase tracking-wider truncate">{label}</p>
+          <p className="text-xl sm:text-2xl font-bold tracking-tight truncate text-foreground">{value}</p>
         </div>
       </Card.Content>
     </Card>
   )
 }
+

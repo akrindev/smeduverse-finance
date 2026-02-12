@@ -1,6 +1,5 @@
 import { Card } from '@heroui/react'
 import type { LucideIcon } from 'lucide-react'
-import { surfaceCardClass } from '@/lib/page-styles'
 
 interface StatCardProps {
   icon: LucideIcon
@@ -20,16 +19,19 @@ export function StatCard({
   valueColorClass,
 }: StatCardProps) {
   return (
-    <Card className={surfaceCardClass}>
-      <Card.Content className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${iconBgClass} ${iconColorClass}`}>
+    <Card className="border border-border/50 shadow-sm bg-surface/50 backdrop-blur-sm">
+      <Card.Content className="flex flex-row gap-4">
+        <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center ${iconBgClass} ${iconColorClass} shadow-inner`}>
           <Icon className="w-5 h-5" />
         </div>
-        <div>
-          <p className="text-sm text-default-500">{label}</p>
-          <p className={`text-xl font-semibold ${valueColorClass ?? ''}`}>{value}</p>
+        <div className="flex flex-col min-w-0">
+          <p className="text-xs font-medium text-default-500 uppercase tracking-wider truncate">{label}</p>
+          <p className={`text-xl font-bold tracking-tight truncate ${valueColorClass ?? 'text-foreground'}`}>
+            {value}
+          </p>
         </div>
       </Card.Content>
     </Card>
   )
 }
+
