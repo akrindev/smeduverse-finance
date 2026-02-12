@@ -116,6 +116,23 @@ export interface Rombel {
   } | null
 }
 
+export interface TahunAjaran {
+  id: number
+  nama?: string | null
+  name?: string | null
+  code?: string | null
+  aktif?: boolean
+  is_active?: boolean
+  rombongan_belajar_count?: number
+}
+
+export interface Semester {
+  id: number
+  nama?: string | null
+  name?: string | null
+  is_active?: boolean
+}
+
 export interface RefStudentsFilters {
   search?: string
   active?: boolean

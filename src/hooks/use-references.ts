@@ -5,8 +5,10 @@ import type {
   RefRombelsFilters,
   RefStudentsFilters,
   Rombel,
+  Semester,
   SingleResponse,
   Student,
+  TahunAjaran,
 } from '@/types/finance'
 
 const REFERENCE_KEYS = {
@@ -19,10 +21,44 @@ const REFERENCE_KEYS = {
     [...REFERENCE_KEYS.all, 'rombels', filters] as const,
   rombelDetail: (rombelId: string) =>
     [...REFERENCE_KEYS.all, 'rombels', 'detail', rombelId] as const,
+  tahunAjarans: (filters?: { active_only?: boolean }) =>
+    [...REFERENCE_KEYS.all, 'tahun-ajarans', filters] as const,
+  semesters: (filters?: { active_only?: boolean }) =>
+    [...REFERENCE_KEYS.all, 'semesters', filters] as const,
 }
 
 interface QueryOptions {
   enabled?: boolean
+}
+
+export function useRefTahunAjarans(filters?: { active_only?: boolean }, options?: QueryOptions) {
+  return useQuery({
+    queryKey: REFERENCE_KEYS.tahunAjarans(filters),
+    queryFn: async () => {
+      const response = await apiGet<PaginatedResponse<TahunAjaran> | { data: PaginatedResponse<TahunAjaran> }>(
+        '/ref/tahun-ajarans',
+        filters as Record<string, unknown>,
+      )
+      return unwrapPaginated(response)
+    },
+    enabled: options?.enabled ?? true,
+    placeholderData: (previousData) => previousData,
+  })
+}
+
+export function useRefSemesters(filters?: { active_only?: boolean }, options?: QueryOptions) {
+  return useQuery({
+    queryKey: REFERENCE_KEYS.semesters(filters),
+    queryFn: async () => {
+      const response = await apiGet<PaginatedResponse<Semester> | { data: PaginatedResponse<Semester> }>(
+        '/ref/semesters',
+        filters as Record<string, unknown>,
+      )
+      return unwrapPaginated(response)
+    },
+    enabled: options?.enabled ?? true,
+    placeholderData: (previousData) => previousData,
+  })
 }
 
 export function useRefStudents(filters?: RefStudentsFilters, options?: QueryOptions) {

@@ -15,10 +15,10 @@ import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
 import { Button, Card, Chip, Spinner } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowLeft, User as UserIcon } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 interface StudentSummary {
   totalBills: number
@@ -37,6 +37,7 @@ const genderLabels: Record<string, string> = {
 function ClassDetailPage() {
   const { classId } = Route.useParams()
   const navigate = useNavigate()
+  const search = useSearch({ from: '/dashboard/student-bills' })
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
@@ -52,21 +53,28 @@ function ClassDetailPage() {
     rombongan_belajar_id: classId,
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
+    search: search.search,
   })
 
   const {
     data: classBillsData,
     isLoading: classBillsLoading,
   } = useQuery({
-    queryKey: ['bills', 'class', classId],
+    queryKey: ['bills', 'class', classId, search.tahun_ajaran_id, search.semester_id],
     queryFn: async () => {
       const response = await apiGet<PaginatedResponse<Bill> | { data: PaginatedResponse<Bill> }>('/bills', {
         rombongan_belajar_id: classId,
+        tahun_ajaran_id: search.tahun_ajaran_id,
+        semester_id: search.semester_id,
         per_page: 500,
       })
       return unwrapPaginated(response)
     },
   })
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [search.search])
 
   const students = studentsData?.data ?? []
   const meta = studentsData?.meta

@@ -5,8 +5,8 @@ import { formatCurrency } from '@/lib/format'
 import { getRombelLabel, sortRombelsByJenjang } from '@/lib/tagihan-siswa'
 import type { Rombel } from '@/types/finance'
 import { TablePagination } from '@/lib/table-pagination'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { useMemo, useState, useEffect } from 'react'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Button, Card, Chip, Spinner } from '@heroui/react'
 import {
@@ -22,6 +22,7 @@ export const Route = createFileRoute('/dashboard/student-bills/')({
 
 function ClassListPage() {
   const navigate = useNavigate()
+  const search = useSearch({ from: '/dashboard/student-bills' })
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   
   const {
@@ -33,7 +34,13 @@ function ClassListPage() {
   } = useRefRombels({ 
     per_page: pagination.pageSize, 
     page: pagination.pageIndex + 1,
+    search: search.search,
+    tahun_ajaran_id: search.tahun_ajaran_id,
   })
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [search.search, search.tahun_ajaran_id])
 
   const meta = rombelsData?.meta
   const rombels = useMemo(() => sortRombelsByJenjang(rombelsData?.data ?? []), [rombelsData?.data])

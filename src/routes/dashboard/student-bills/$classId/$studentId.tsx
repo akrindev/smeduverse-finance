@@ -12,7 +12,7 @@ import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
 import { Button, Card, Spinner, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -24,6 +24,7 @@ export const Route = createFileRoute('/dashboard/student-bills/$classId/$student
 function StudentDetailPage() {
   const { classId, studentId } = Route.useParams()
   const navigate = useNavigate()
+  const search = useSearch({ from: '/dashboard/student-bills' })
   const queryClient = useQueryClient()
 
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
@@ -34,11 +35,17 @@ function StudentDetailPage() {
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
 
+  const billParams = useMemo(() => ({
+    per_page: 500,
+    tahun_ajaran_id: search.tahun_ajaran_id,
+    semester_id: search.semester_id,
+  }), [search.tahun_ajaran_id, search.semester_id])
+
   const {
     data: allBillsData,
     isLoading: allBillsLoading,
     isFetching: allBillsFetching,
-  } = useStudentBills(studentId, { per_page: 500 })
+  } = useStudentBills(studentId, billParams)
 
   const {
     data: paginatedBillsData,
@@ -47,9 +54,14 @@ function StudentDetailPage() {
     isFetching: paginatedBillsFetching,
     error: billsError,
   } = useStudentBills(studentId, {
+    ...billParams,
     page: otherPagination.pageIndex + 1,
     per_page: otherPagination.pageSize,
   })
+
+  useEffect(() => {
+    setOtherPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [search.tahun_ajaran_id, search.semester_id])
 
   const allBills = allBillsData?.data ?? []
   const paginatedBills = paginatedBillsData?.data ?? []
