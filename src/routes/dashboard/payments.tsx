@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
-import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
+import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt, Plus } from 'lucide-react'
+import { Button, Card, Chip, Input, Spinner, TextField, useOverlayState } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
@@ -12,6 +12,7 @@ import { usePayments } from '@/hooks/use-payments'
 import { formatCurrency } from '@/lib/format'
 import type { Payment } from '@/types/finance'
 import { TablePagination } from '@/lib/table-pagination'
+import { PaymentModal } from '@/components/student-bills/payment-modal'
 import {
   cardHeaderClass,
   pageShellClass,
@@ -33,8 +34,9 @@ function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<'all' | Payment['status']>('all')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
+  const paymentModalState = useOverlayState()
 
-  const { data, isLoading, isPlaceholderData, isFetching, error } = usePayments({
+  const { data, isLoading, isPlaceholderData, isFetching, error, refetch } = usePayments({
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
     status: activeFilter === 'all' ? undefined : activeFilter,
@@ -90,10 +92,16 @@ function PaymentsPage() {
   return (
     <div className={pageShellClass}>
       <PageHeader title="Riwayat Pembayaran" description="Data transaksi pembayaran dari Finance API.">
-        <Button variant="secondary">
-          <Download className="w-4 h-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="primary" className="bg-accent text-accent-foreground" onPress={paymentModalState.open}>
+            <Plus className="w-4 h-4 mr-2" />
+            Input Pembayaran
+          </Button>
+          <Button variant="secondary">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -178,7 +186,7 @@ function PaymentsPage() {
                   <th className={tableHeadCellClass}>Total</th>
                   <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
                   <th className={tableHeadCellClass}>Status</th>
-                    <th className={tableHeadCellClass}>Aksi</th>
+                  <th className={tableHeadCellClass}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -243,6 +251,12 @@ function PaymentsPage() {
           </Chip>
         </Card.Content>
       </Card>
+
+      <PaymentModal
+        state={paymentModalState}
+        onSuccess={() => refetch()}
+      />
     </div>
   )
 }
+

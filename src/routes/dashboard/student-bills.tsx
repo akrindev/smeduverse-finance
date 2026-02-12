@@ -2,10 +2,12 @@ import { PageHeader } from '@/components/shared/page-header'
 import { pageShellClass } from '@/lib/page-styles'
 import { createFileRoute, Outlet, useNavigate, useSearch } from '@tanstack/react-router'
 import { z } from 'zod'
-import { Input, ListBox, Select, TextField, Label } from '@heroui/react'
-import { Search } from 'lucide-react'
+import { Input, ListBox, Select, TextField, Label, Button, useOverlayState } from '@heroui/react'
+import { Search, Calculator } from 'lucide-react'
 import { useRefTahunAjarans, useRefSemesters } from '@/hooks/use-references'
 import { useState, useEffect } from 'react'
+import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
+import { useQueryClient } from '@tanstack/react-query'
 
 const studentBillsSearchSchema = z.object({
   search: z.string().optional(),
@@ -23,8 +25,10 @@ export const Route = createFileRoute('/dashboard/student-bills')({
 function StudentBillsLayout() {
   const search = useSearch({ from: '/dashboard/student-bills' })
   const navigate = useNavigate({ from: Route.fullPath })
+  const queryClient = useQueryClient()
   
   const [localSearch, setLocalSearch] = useState(search.search || '')
+  const generateModalState = useOverlayState()
 
   const { data: years } = useRefTahunAjarans()
   const { data: semesters } = useRefSemesters()
@@ -49,7 +53,16 @@ function StudentBillsLayout() {
 
   return (
     <div className={pageShellClass}>
-      <PageHeader title="Tagihan Siswa" description="Alur kelas ke siswa untuk melihat dan membayar tagihan." />
+      <PageHeader title="Tagihan Siswa" description="Alur kelas ke siswa untuk melihat dan membayar tagihan.">
+        <Button
+          variant="primary"
+          className="bg-accent text-accent-foreground"
+          onPress={generateModalState.open}
+        >
+          <Calculator className="mr-2 w-4 h-4" />
+          Generate Tagihan
+        </Button>
+      </PageHeader>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <TextField className="md:col-span-2">
@@ -115,6 +128,14 @@ function StudentBillsLayout() {
       </div>
 
       <Outlet />
+
+      <GenerateBillModal
+        state={generateModalState}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['bills'] })
+          queryClient.invalidateQueries({ queryKey: ['references', 'rombels'] })
+        }}
+      />
     </div>
   )
 }
