@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+/* ─── Smeduverse Finance Theme ─── */
+/* Soft-red accent (warm tomato-coral, NOT pink) */
+/* Hue ~25° in oklch = warm red. Pink would be ~340-350°. */
+
+:root,
+[data-theme="light"] {
+  /* Brand accent — soft warm red */
+  --accent: oklch(0.62 0.2 25);
+  --accent-foreground: oklch(0.98 0 0);
+  --accent-soft: oklch(0.92 0.06 25);
+  --accent-soft-foreground: oklch(0.45 0.15 25);
+
+  /* Backgrounds */
+  --background: oklch(0.975 0.002 80);
+  --foreground: oklch(0.2 0.01 260);
+  --surface: oklch(0.995 0 0);
+  --surface-foreground: oklch(0.2 0.01 260);
+  --overlay: oklch(0.995 0 0);
+  --overlay-foreground: oklch(0.2 0.01 260);
+
+  /* Defaults */
+  --default: oklch(0.93 0.005 260);
+  --default-foreground: oklch(0.35 0.01 260);
+  --muted: oklch(0.55 0.01 260);
+  --border: oklch(0.88 0.005 260);
+
+  /* Status colors */
+  --success: oklch(0.62 0.17 155);
+  --success-foreground: oklch(0.98 0 0);
+  --warning: oklch(0.75 0.16 75);
+  --warning-foreground: oklch(0.2 0.02 75);
+  --danger: oklch(0.58 0.22 28);
+  --danger-foreground: oklch(0.98 0 0);
+
+  /* Form fields */
+  --field-background: oklch(0.97 0.002 260);
+  --field-foreground: oklch(0.2 0.01 260);
+  --field-placeholder: oklch(0.6 0.01 260);
+  --field-border: oklch(0.88 0.005 260);
+
+  /* Focus & links */
+  --focus: oklch(0.62 0.2 25);
+  --link: oklch(0.55 0.18 25);
+}
+
+.dark,
+[data-theme="dark"] {
+  /* Brand accent — brighter for dark bg */
+  --accent: oklch(0.7 0.18 25);
+  --accent-foreground: oklch(0.13 0 0);
+  --accent-soft: oklch(0.28 0.06 25);
+  --accent-soft-foreground: oklch(0.82 0.1 25);
+
+  /* Backgrounds */
+  --background: oklch(0.16 0.01 260);
+  --foreground: oklch(0.93 0.005 260);
+  --surface: oklch(0.2 0.012 260);
+  --surface-foreground: oklch(0.93 0.005 260);
+  --overlay: oklch(0.22 0.014 260);
+  --overlay-foreground: oklch(0.93 0.005 260);
+
+  /* Defaults */
+  --default: oklch(0.28 0.01 260);
+  --default-foreground: oklch(0.8 0.005 260);
+  --muted: oklch(0.55 0.01 260);
+  --border: oklch(0.3 0.01 260);
+
+  /* Status colors */
+  --success: oklch(0.7 0.17 155);
+  --success-foreground: oklch(0.13 0 0);
+  --warning: oklch(0.78 0.14 75);
+  --warning-foreground: oklch(0.15 0.02 75);
+  --danger: oklch(0.68 0.2 28);
+  --danger-foreground: oklch(0.13 0 0);
+
+  /* Form fields */
+  --field-background: oklch(0.22 0.012 260);
+  --field-foreground: oklch(0.93 0.005 260);
+  --field-placeholder: oklch(0.55 0.01 260);
+  --field-border: oklch(0.32 0.01 260);
+
+  /* Focus & links */
+  --focus: oklch(0.7 0.18 25);
+  --link: oklch(0.75 0.15 25);
+}
+
+/* ─── Custom Tailwind v4 theme tokens ─── */
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-foreground: var(--accent-soft-foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-border: var(--border);
+}
+
+/* ─── Base styles ─── */
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply m-0 bg-background text-foreground antialiased;
+}
