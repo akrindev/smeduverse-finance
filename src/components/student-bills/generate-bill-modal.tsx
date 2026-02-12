@@ -1,6 +1,6 @@
 import {
-  Autocomplete,
   Button,
+  FieldError,
   Input,
   ListBox,
   Modal,
@@ -31,19 +31,20 @@ interface GenerateBillModalProps {
 
 export function GenerateBillModal({ state, selectedClass: initialClass, studentIds: initialStudentIds, onSuccess }: GenerateBillModalProps) {
   const [billType, setBillType] = useState<'spp' | 'fee'>('spp')
-  const [classSearch, setClassSearch] = useState('')
   const [selectedClassId, setSelectedClassId] = useState<string>('')
+  const [selectedTahunAjaranId, setSelectedTahunAjaranId] = useState<string>('')
   
   const generateSpp = useGenerateSpp()
   const generateFee = useGenerateFee()
   
   const { data: years } = useRefTahunAjarans()
-  const { data: semesters } = useRefSemesters()
+  const { data: semesters } = useRefSemesters(
+    selectedTahunAjaranId ? { tahun_ajaran_id: Number(selectedTahunAjaranId) } : undefined,
+  )
   const { data: feeTypesData } = useFeeTypes({ per_page: 100, is_active: true })
   
   const { data: rombelsData } = useRefRombels({
-    search: classSearch || undefined,
-    per_page: 20,
+    per_page: 100,
     active_only: true,
   }, { enabled: state.isOpen && !initialClass })
 
@@ -60,6 +61,7 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
     if (state.isOpen) {
       setSelectedClassId('')
       setBillType('spp')
+      setSelectedTahunAjaranId('')
     }
   }, [state.isOpen])
 
@@ -71,6 +73,12 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
   const activeYears = useMemo(() => years?.data.filter(y => y.is_active || y.aktif) ?? [], [years])
   const activeSemesters = useMemo(() => semesters?.data.filter(s => s.is_active) ?? [], [semesters])
   const otherFeeTypes = useMemo(() => feeTypesData?.data.filter(ft => ft.billing_cycle !== 'monthly') ?? [], [feeTypesData])
+
+  useEffect(() => {
+    if (activeYears.length > 0 && !selectedTahunAjaranId) {
+      setSelectedTahunAjaranId(activeYears[0].id.toString())
+    }
+  }, [activeYears, selectedTahunAjaranId])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -149,38 +157,33 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
                 )}
 
                 {!initialClass && (
-                  <Autocomplete
+                  <Select
+                    aria-label="Pilih Kelas"
                     isRequired
-                    placeholder="Pilih kelas..."
+                    fullWidth
                     value={selectedClassId}
-                    onChange={(val) => setSelectedClassId(val as string)}
+                    onChange={(val) => setSelectedClassId(val ? String(val) : '')}
                   >
                     <Label>Pilih Kelas</Label>
-                    <Autocomplete.Trigger>
-                      <Autocomplete.Value>
-                        {({ state: autocompleteState }: any) => {
-                          const selected = rombels.find(r => r.id === autocompleteState.selectedKey)
-                          return selected ? (selected.nama || selected.name) : 'Pilih Kelas'
-                        }}
-                      </Autocomplete.Value>
-                      <Autocomplete.Indicator />
-                    </Autocomplete.Trigger>
-                    <Autocomplete.Popover>
-                      <Autocomplete.Filter onInputChange={setClassSearch}>
-                        <ListBox>
-                          {rombels.map((r) => (
-                            <ListBox.Item key={r.id} id={r.id} textValue={r.nama || r.name || ''}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{r.nama || r.name}</span>
-                                <span className="text-xs text-default-500">{r.tingkat_kelas ? `Tingkat ${r.tingkat_kelas}` : ''}</span>
-                              </div>
-                              <ListBox.ItemIndicator />
-                            </ListBox.Item>
-                          ))}
-                        </ListBox>
-                      </Autocomplete.Filter>
-                    </Autocomplete.Popover>
-                  </Autocomplete>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        {rombels.map((r) => (
+                          <ListBox.Item key={r.id} id={r.id} textValue={r.nama || r.name || ''}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{r.nama || r.name}</span>
+                              <span className="text-xs text-default-500">{r.tingkat_kelas ? `Tingkat ${r.tingkat_kelas}` : ''}</span>
+                            </div>
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </ListBox>
+                    </Select.Popover>
+                    <FieldError />
+                  </Select>
                 )}
 
 
@@ -206,35 +209,69 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
                 {billType === 'spp' ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <Select isRequired name="tahun_ajaran_id" defaultValue={activeYears[0]?.id.toString()}>
+                      <Select
+                        isRequired
+                        name="tahun_ajaran_id"
+                        value={selectedTahunAjaranId}
+                        onChange={(val) => {
+                          setSelectedTahunAjaranId(val ? String(val) : '')
+                        }}
+                      >
                         <Label>Tahun Ajaran</Label>
-                        <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+                        <Select.Trigger>
+                          <Select.Value />
+                          <Select.Indicator />
+                        </Select.Trigger>
                         <Select.Popover>
                           <ListBox>
-                            {years?.data.map(y => <ListBox.Item key={y.id} id={y.id.toString()} textValue={y.nama || ''}>{y.nama}</ListBox.Item>)}
+                            {years?.data.map(y => (
+                              <ListBox.Item key={y.id} id={y.id.toString()} textValue={y.nama || y.name || ''}>
+                                {y.nama || y.name}
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            ))}
                           </ListBox>
                         </Select.Popover>
+                        <FieldError />
                       </Select>
-                      <Select isRequired name="semester_id" defaultValue={activeSemesters[0]?.id.toString()}>
+                      <Select isRequired name="semester_id" defaultValue={activeSemesters[0]?.id.toString()} key={selectedTahunAjaranId}>
                         <Label>Semester</Label>
-                        <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+                        <Select.Trigger>
+                          <Select.Value />
+                          <Select.Indicator />
+                        </Select.Trigger>
                         <Select.Popover>
                           <ListBox>
-                            {semesters?.data.map(s => <ListBox.Item key={s.id} id={s.id.toString()} textValue={s.nama || ''}>{s.nama}</ListBox.Item>)}
+                            {semesters?.data.map(s => (
+                              <ListBox.Item key={s.id} id={s.id.toString()} textValue={s.nama || s.name || ''}>
+                                {s.nama || s.name}
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            ))}
                           </ListBox>
                         </Select.Popover>
+                        <FieldError />
                       </Select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <Select isRequired name="period_month" defaultValue={(new Date().getMonth() + 1).toString()}>
                         <Label>Bulan SPP</Label>
-                        <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+                        <Select.Trigger>
+                          <Select.Value />
+                          <Select.Indicator />
+                        </Select.Trigger>
                         <Select.Popover>
                           <ListBox>
-                            {MONTH_NAMES.map((name, i) => <ListBox.Item key={i+1} id={(i+1).toString()} textValue={name}>{name}</ListBox.Item>)}
+                            {MONTH_NAMES.map((name, i) => (
+                              <ListBox.Item key={i+1} id={(i+1).toString()} textValue={name}>
+                                {name}
+                                <ListBox.ItemIndicator />
+                              </ListBox.Item>
+                            ))}
                           </ListBox>
                         </Select.Popover>
+                        <FieldError />
                       </Select>
                       <TextField isRequired name="period_year" type="number" defaultValue={new Date().getFullYear().toString()}>
                         <Label>Tahun SPP</Label>
@@ -256,12 +293,21 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
                   <div className="space-y-4">
                     <Select isRequired name="finance_fee_type_id">
                       <Label>Jenis Biaya</Label>
-                      <Select.Trigger><Select.Value /><Select.Indicator /></Select.Trigger>
+                      <Select.Trigger>
+                        <Select.Value />
+                        <Select.Indicator />
+                      </Select.Trigger>
                       <Select.Popover>
                         <ListBox>
-                          {otherFeeTypes.map(ft => <ListBox.Item key={ft.id} id={ft.id.toString()} textValue={ft.name}>{ft.name}</ListBox.Item>)}
+                          {otherFeeTypes.map(ft => (
+                            <ListBox.Item key={ft.id} id={ft.id.toString()} textValue={ft.name}>
+                              {ft.name}
+                              <ListBox.ItemIndicator />
+                            </ListBox.Item>
+                          ))}
                         </ListBox>
                       </Select.Popover>
+                      <FieldError />
                     </Select>
 
                     <TextField isRequired name="title">

@@ -23,7 +23,7 @@ const REFERENCE_KEYS = {
     [...REFERENCE_KEYS.all, 'rombels', 'detail', rombelId] as const,
   tahunAjarans: (filters?: { active_only?: boolean }) =>
     [...REFERENCE_KEYS.all, 'tahun-ajarans', filters] as const,
-  semesters: (filters?: { active_only?: boolean }) =>
+  semesters: (filters?: { active_only?: boolean; tahun_ajaran_id?: number }) =>
     [...REFERENCE_KEYS.all, 'semesters', filters] as const,
 }
 
@@ -46,7 +46,7 @@ export function useRefTahunAjarans(filters?: { active_only?: boolean }, options?
   })
 }
 
-export function useRefSemesters(filters?: { active_only?: boolean }, options?: QueryOptions) {
+export function useRefSemesters(filters?: { active_only?: boolean; tahun_ajaran_id?: number }, options?: QueryOptions) {
   return useQuery({
     queryKey: REFERENCE_KEYS.semesters(filters),
     queryFn: async () => {

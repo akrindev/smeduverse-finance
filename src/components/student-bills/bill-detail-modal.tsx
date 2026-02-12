@@ -19,6 +19,8 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
   const hasDiscount = bill.amount_discount > 0
   const hasScholarship = Boolean(bill.student_scholarship)
 
+  const statusConfig = billStatusConfig[bill.status] || { label: bill.status, color: 'default' }
+
   return (
     <Modal state={state}>
       <Modal.Backdrop>
@@ -34,8 +36,8 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
 
             <Modal.Body className="space-y-5">
               <div className="flex items-center justify-between">
-                <Chip size="sm" variant="soft" color={billStatusConfig[bill.status].color}>
-                  <Chip.Label>{billStatusConfig[bill.status].label}</Chip.Label>
+                <Chip size="sm" variant="soft" color={statusConfig.color as any}>
+                  {statusConfig.label}
                 </Chip>
                 {bill.period_month && bill.period_year && (
                   <span className="text-sm font-medium text-default-500">
@@ -76,13 +78,13 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
                 {bill.voided_at && <DetailRow label="Divoid Pada" value={formatDate(bill.voided_at)} valueClass="text-danger" />}
               </div>
 
-              {bill.allocations.length > 0 && (
+              {(bill.allocations ?? []).length > 0 && (
                 <>
                   <Separator />
                   <div>
                     <p className="text-sm font-medium mb-2">Riwayat Alokasi Pembayaran</p>
                     <div className="space-y-1.5">
-                      {bill.allocations.map((allocation) => (
+                      {(bill.allocations ?? []).map((allocation) => (
                         <div key={allocation.id} className="flex items-center justify-between rounded-xl bg-background/60 p-2.5">
                           <span className="text-xs text-default-500">Pembayaran #{allocation.finance_payment_id}</span>
                           <span className="text-sm font-medium text-success">{formatCurrency(allocation.allocated_amount)}</span>
