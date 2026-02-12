@@ -13,7 +13,7 @@ import {
 import { getRombelLabel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
-import { Button, Card, Chip } from '@heroui/react'
+import { Button, Card, Chip, Spinner } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
@@ -46,6 +46,7 @@ function ClassDetailPage() {
     data: studentsData,
     isLoading: studentsLoading,
     isPlaceholderData: studentsPlaceholder,
+    isFetching: studentsFetching,
     error: studentsError,
   } = useRefStudents({
     rombongan_belajar_id: classId,
@@ -132,7 +133,12 @@ function ClassDetailPage() {
       </Card>
 
       <Card className={surfaceCardClass}>
-        <Card.Content>
+        <Card.Content className="relative min-h-[300px]">
+          {studentsFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+              <Spinner size="lg" />
+            </div>
+          )}
           {isLoading ? (
             <LoadingState minHeight="260px" />
           ) : studentsError ? (

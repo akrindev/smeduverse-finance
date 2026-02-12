@@ -10,7 +10,7 @@ import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellCla
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
-import { Button, Card, useOverlayState } from '@heroui/react'
+import { Button, Card, Spinner, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
@@ -37,12 +37,14 @@ function StudentDetailPage() {
   const {
     data: allBillsData,
     isLoading: allBillsLoading,
+    isFetching: allBillsFetching,
   } = useStudentBills(studentId, { per_page: 500 })
 
   const {
     data: paginatedBillsData,
     isLoading: paginatedBillsLoading,
     isPlaceholderData,
+    isFetching: paginatedBillsFetching,
     error: billsError,
   } = useStudentBills(studentId, {
     page: otherPagination.pageIndex + 1,
@@ -164,7 +166,12 @@ function StudentDetailPage() {
                 </div>
               </div>
             </Card.Header>
-            <Card.Content>
+            <Card.Content className="relative">
+              {allBillsFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
               <div data-testid="section-spp-primary" className="space-y-4">
                 {sppByYear.length === 0 ? (
                   <div data-testid="section-spp-primary-empty">
@@ -250,7 +257,12 @@ function StudentDetailPage() {
                 </div>
               </div>
             </Card.Header>
-            <Card.Content>
+            <Card.Content className="relative min-h-[200px]">
+              {paginatedBillsFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
               <div data-testid="section-other-bills" className="space-y-2">
                 {otherBills.length === 0 ? (
                   <EmptyState icon={Receipt} message="Tidak ada tagihan selain SPP untuk siswa ini." />
