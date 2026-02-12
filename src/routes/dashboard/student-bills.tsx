@@ -1,13 +1,13 @@
 import { PageHeader } from '@/components/shared/page-header'
-import { pageShellClass } from '@/lib/page-styles'
-import { createFileRoute, Outlet, useNavigate, useSearch } from '@tanstack/react-router'
-import { z } from 'zod'
-import { Input, ListBox, Select, TextField, Label, Button, useOverlayState } from '@heroui/react'
-import { Search, Calculator } from 'lucide-react'
-import { useRefTahunAjarans, useRefSemesters } from '@/hooks/use-references'
-import { useState, useEffect } from 'react'
 import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
+import { useRefSemesters, useRefTahunAjarans } from '@/hooks/use-references'
+import { pageShellClass } from '@/lib/page-styles'
+import { Input, Label, ListBox, Select, TextField, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Outlet, useNavigate, useSearch } from '@tanstack/react-router'
+import { Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
 
 const studentBillsSearchSchema = z.object({
   search: z.string().optional(),
@@ -54,14 +54,14 @@ function StudentBillsLayout() {
   return (
     <div className={pageShellClass}>
       <PageHeader title="Tagihan Siswa" description="Alur kelas ke siswa untuk melihat dan membayar tagihan.">
-        <Button
+        {/* <Button
           variant="primary"
           className="bg-accent text-accent-foreground"
           onPress={generateModalState.open}
         >
           <Calculator className="mr-2 w-4 h-4" />
           Generate Tagihan
-        </Button>
+        </Button> */}
       </PageHeader>
       
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

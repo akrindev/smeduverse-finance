@@ -20,13 +20,11 @@ export function UserMenu({
 }: UserMenuProps) {
   return (
     <Dropdown>
-      <Dropdown.Trigger>
-        <Button isIconOnly variant="ghost" className={className} aria-label="Akun">
-          <Avatar size="sm" color="accent">
-            <Avatar.Fallback>{initials}</Avatar.Fallback>
-          </Avatar>
-        </Button>
-      </Dropdown.Trigger>
+      <Button isIconOnly variant="ghost" className={className} aria-label="Akun">
+        <Avatar size="sm" color="accent">
+          <Avatar.Fallback>{initials}</Avatar.Fallback>
+        </Avatar>
+      </Button>
       <Dropdown.Popover placement={placement}>
         <Dropdown.Menu aria-label="User menu">
           <Dropdown.Item id="user-info" textValue={displayName}>

@@ -4,18 +4,24 @@ import { LoadingState } from '@/components/shared/loading-state'
 import { BillDetailModal } from '@/components/student-bills/bill-detail-modal'
 import { PaymentModal } from '@/components/student-bills/payment-modal'
 import { useStudentBills } from '@/hooks/use-bills'
+import { usePayments } from '@/hooks/use-payments'
 import { useRefStudent } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
-import { Button, Card, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+
+const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'danger' }> = {
+  confirmed: { label: 'Terkonfirmasi', color: 'success' },
+  void: { label: 'Void', color: 'danger' },
+}
 
 export const Route = createFileRoute('/dashboard/student-bills/$classId/$studentId')({
   component: StudentDetailPage,
@@ -30,6 +36,7 @@ function StudentDetailPage() {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [billToPay, setBillToPay] = useState<Bill | null>(null)
   const [otherPagination, setOtherPagination] = useState({ pageIndex: 0, pageSize: 15 })
+  const [paymentPagination, setPaymentPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
@@ -58,6 +65,18 @@ function StudentDetailPage() {
     page: otherPagination.pageIndex + 1,
     per_page: otherPagination.pageSize,
   })
+
+  const {
+    data: paymentsData,
+    isFetching: paymentsFetching,
+  } = usePayments({
+    student_id: studentId,
+    page: paymentPagination.pageIndex + 1,
+    per_page: paymentPagination.pageSize,
+  })
+
+  const payments = paymentsData?.data ?? []
+  const paymentsMeta = paymentsData?.meta
 
   useEffect(() => {
     setOtherPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -361,6 +380,77 @@ function StudentDetailPage() {
                       canNextPage={otherTable.getCanNextPage()}
                       onPreviousPage={() => otherTable.previousPage()}
                       onNextPage={() => otherTable.nextPage()}
+                    />
+                  </div>
+                )}
+              </div>
+            </Card.Content>
+          </Card>
+
+          <Card className={surfaceCardClass}>
+            <Card.Header className={cardHeaderClass}>
+              <div className="flex justify-between items-center gap-2 w-full">
+                <p className="font-medium">Riwayat Pembayaran</p>
+                <div className="bg-success/10 px-2 py-0.5 rounded-full text-success text-xs">
+                  {paymentsMeta?.total ?? 0} transaksi
+                </div>
+              </div>
+            </Card.Header>
+            <Card.Content className="relative min-h-[200px]">
+              {paymentsFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
+              <div data-testid="section-payment-history" className="space-y-2">
+                {payments.length === 0 ? (
+                  <EmptyState icon={Wallet} message="Belum ada riwayat pembayaran untuk siswa ini." />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-border/70 border-t">
+                          <th className={tableHeadCellClass}>No. Pembayaran</th>
+                          <th className={tableHeadCellClass}>Metode</th>
+                          <th className={tableHeadCellClass}>Total</th>
+                          <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
+                          <th className={tableHeadCellClass}>Status</th>
+                          <th className={tableHeadCellClass}>Referal/Catatan</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((payment) => (
+                          <tr key={payment.id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
+                            <td className={tableBodyCellClass}>
+                              <p className="font-mono text-xs">{payment.payment_number}</p>
+                            </td>
+                            <td className={`${tableBodyCellClass} capitalize`}>{payment.payment_method}</td>
+                            <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(payment.total_amount)}</td>
+                            <td className={`${tableBodyCellClass} hidden md:table-cell`}>{payment.payment_date}</td>
+                            <td className={tableBodyCellClass}>
+                              <Chip size="sm" variant="soft" color={paymentStatusConfig[payment.status]?.color ?? 'default'}>
+                                <Chip.Label>{paymentStatusConfig[payment.status]?.label ?? payment.status}</Chip.Label>
+                              </Chip>
+                            </td>
+                            <td className={tableBodyCellClass}>
+                              <p className="max-w-[200px] text-xs text-default-500 truncate">
+                                {payment.reference_number || payment.notes || '-'}
+                              </p>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <TablePagination
+                      pageIndex={paymentPagination.pageIndex}
+                      pageCount={paymentsMeta ? Math.ceil(paymentsMeta.total / paymentPagination.pageSize) : 1}
+                      pageSize={paymentPagination.pageSize}
+                      totalRows={paymentsMeta?.total ?? 0}
+                      visibleRows={payments.length}
+                      canPreviousPage={paymentPagination.pageIndex > 0}
+                      canNextPage={paymentPagination.pageIndex < (paymentsMeta?.last_page ?? 1) - 1}
+                      onPreviousPage={() => setPaymentPagination(p => ({ ...p, pageIndex: p.pageIndex - 1 }))}
+                      onNextPage={() => setPaymentPagination(p => ({ ...p, pageIndex: p.pageIndex + 1 }))}
                     />
                   </div>
                 )}

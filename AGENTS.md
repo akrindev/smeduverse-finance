@@ -29,7 +29,7 @@ Compound component API (NOT flat props):
 </Card>
 
 <Dropdown>
-  <Dropdown.Trigger><Button>Open</Button></Dropdown.Trigger>
+  <Button aria-label="Open">Open</Button>
   <Dropdown.Popover>
     <Dropdown.Menu aria-label="...">
       <Dropdown.Item id="x">X</Dropdown.Item>
