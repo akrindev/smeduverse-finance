@@ -158,7 +158,7 @@ function PaymentsPage() {
           </TextField>
         </Card.Header>
 
-        <Card.Content className="px-0 pb-0">
+        <Card.Content>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -196,10 +196,10 @@ function PaymentsPage() {
                       <Link
                         to="/dashboard/student-bills"
                         search={{ student_id: payment.student_id }}
+                        className="flex w-8 h-8 items-center justify-center rounded-lg hover:bg-default/60 transition-colors text-default-foreground outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                        aria-label="Lihat tagihan siswa"
                       >
-                        <Button size="sm" variant="ghost" isIconOnly aria-label="Lihat tagihan siswa">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Button>
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </Link>
                     </td>
                   </tr>
@@ -227,7 +227,7 @@ function PaymentsPage() {
       </Card>
 
       <Card className={surfaceCardClass}>
-        <Card.Content className="p-4 flex items-center justify-between text-sm">
+        <Card.Content className="flex items-center justify-between text-sm">
           <span className="text-default-500">Transaksi void</span>
           <Chip size="sm" variant="soft" color="danger">
             <Chip.Label>{voidCount}</Chip.Label>

@@ -104,14 +104,14 @@ function BeasiswaPage() {
             />
           </TextField>
         </Card.Header>
-        <Card.Content className="px-5 pb-5">
+        <Card.Content>
           {filteredScholarships.length === 0 ? (
             <EmptyState icon={GraduationCap} message="Tidak ada data beasiswa ditemukan." />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredScholarships.map((item) => (
                 <Card key={item.id} className={surfaceCardClass}>
-                  <Card.Content className="p-5 space-y-3">
+                  <Card.Content className="space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs text-default-500 font-mono">{item.code}</p>

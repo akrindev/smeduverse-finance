@@ -70,7 +70,7 @@ function FeeTypesPage() {
             </div>
           </TextField>
         </Card.Header>
-        <Card.Content className="px-0 pb-0">
+        <Card.Content>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

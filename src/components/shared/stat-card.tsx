@@ -21,7 +21,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <Card className={surfaceCardClass}>
-      <Card.Content className="p-4 sm:p-5 flex items-center gap-3">
+      <Card.Content className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${iconBgClass} ${iconColorClass}`}>
           <Icon className="w-5 h-5" />
         </div>

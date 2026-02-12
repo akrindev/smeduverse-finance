@@ -1,6 +1,7 @@
 import { Button, Chip } from '@heroui/react'
 import { Bell, Menu } from 'lucide-react'
 import { UserMenu } from '@/components/layouts/user-menu'
+import { ThemeSwitcher } from '@/components/shared/theme-switcher'
 
 interface DashboardHeaderProps {
   activeLabel: string
@@ -43,12 +44,13 @@ export function DashboardHeader({
           <Chip size="sm" variant="soft" color="success" className="hidden sm:inline-flex">
             <Chip.Label>Online</Chip.Label>
           </Chip>
+          <ThemeSwitcher />
           <Button
             variant="secondary"
             isIconOnly
             size="sm"
             aria-label="Notifikasi"
-            className="relative rounded-xl lg:hidden"
+            className="relative rounded-xl"
           >
             <Bell className="w-4 h-4" />
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
@@ -59,7 +61,7 @@ export function DashboardHeader({
             initials={initials}
             placement="bottom end"
             onLogout={onLogout}
-            className="rounded-xl p-0 hidden lg:flex"
+            className="rounded-xl p-0"
           />
         </div>
       </div>

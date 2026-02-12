@@ -1,27 +1,18 @@
 import { Link } from '@tanstack/react-router'
 import { Button, Card, Tooltip } from '@heroui/react'
-import { Bell, ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'
+import { ChevronLeft, ChevronRight, GraduationCap } from 'lucide-react'
 import { navItems } from '@/lib/nav-items'
-import { UserMenu } from '@/components/layouts/user-menu'
 
 interface DashboardSidebarProps {
   sidebarExpanded: boolean
   onToggleExpand: () => void
   currentPath: string
-  displayName: string
-  displayEmail: string
-  initials: string
-  onLogout: () => void
 }
 
 export function DashboardSidebar({
   sidebarExpanded,
   onToggleExpand,
   currentPath,
-  displayName,
-  displayEmail,
-  initials,
-  onLogout,
 }: DashboardSidebarProps) {
   return (
     <aside
@@ -30,10 +21,10 @@ export function DashboardSidebar({
         sidebarExpanded ? 'lg:w-[200px]' : 'lg:w-[72px]'
       }`}
     >
-      <Card className="h-[calc(100vh-3rem)] rounded-[24px] border border-border/50 bg-surface/90 backdrop-blur-xl overflow-hidden">
+      <Card className="h-[calc(100vh-3rem)] overflow-hidden">
         <Card.Content
-          className={`h-full py-5 flex flex-col transition-all duration-300 ${
-            sidebarExpanded ? 'px-3' : 'px-2.5 items-center'
+          className={`h-full flex flex-col transition-all duration-300 ${
+            sidebarExpanded ? '' : 'items-center'
           }`}
         >
           <div className={`flex items-center ${sidebarExpanded ? 'gap-3 px-1' : 'justify-center'}`}>
@@ -50,39 +41,30 @@ export function DashboardSidebar({
                 : currentPath.startsWith(item.to)
               const Icon = item.icon
 
+              const linkClasses = `flex h-11 items-center gap-3 rounded-2xl px-3 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+                isActive
+                  ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25'
+                  : 'text-default-foreground hover:bg-default/60'
+              }`
+
               return sidebarExpanded ? (
-                <Link key={item.to} to={item.to}>
-                  <Button
-                    data-testid="sidebar-nav-item"
-                    fullWidth
-                    variant={isActive ? 'primary' : 'ghost'}
-                    className={`h-11 rounded-2xl justify-start gap-3 px-3 ${
-                      isActive
-                        ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25'
-                        : 'text-default-foreground hover:bg-default/60'
-                    }`}
-                  >
-                    <Icon className="w-[18px] h-[18px] shrink-0" />
-                    <span className="text-sm truncate">{item.label}</span>
-                  </Button>
+                <Link key={item.to} to={item.to} className={linkClasses}>
+                  <Icon className="w-[18px] h-[18px] shrink-0" />
+                  <span className="text-sm truncate">{item.label}</span>
                 </Link>
               ) : (
                 <Tooltip key={item.to}>
                   <Tooltip.Trigger>
-                    <Link to={item.to}>
-                      <Button
-                        data-testid="sidebar-nav-item"
-                        isIconOnly
-                        variant={isActive ? 'primary' : 'ghost'}
-                        className={`w-11 h-11 rounded-2xl ${
-                          isActive
-                            ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25'
-                            : 'text-default-foreground hover:bg-default/60'
-                        }`}
-                        aria-label={item.label}
-                      >
-                        <Icon className="w-[18px] h-[18px]" />
-                      </Button>
+                    <Link
+                      to={item.to}
+                      className={`flex w-11 h-11 items-center justify-center rounded-2xl transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+                        isActive
+                          ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25'
+                          : 'text-default-foreground hover:bg-default/60'
+                      }`}
+                      aria-label={item.label}
+                    >
+                      <Icon className="w-[18px] h-[18px]" />
                     </Link>
                   </Tooltip.Trigger>
                   <Tooltip.Content>{item.label}</Tooltip.Content>
@@ -106,25 +88,6 @@ export function DashboardSidebar({
               </Tooltip.Trigger>
               <Tooltip.Content>{sidebarExpanded ? 'Tutup sidebar' : 'Buka sidebar'}</Tooltip.Content>
             </Tooltip>
-
-            <Button
-              isIconOnly
-              variant="ghost"
-              className="w-11 h-11 rounded-2xl text-default-foreground hover:bg-default/60 relative"
-              aria-label="Notifikasi"
-            >
-              <Bell className="w-[18px] h-[18px]" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-accent" />
-            </Button>
-
-            <UserMenu
-              displayName={displayName}
-              displayEmail={displayEmail}
-              initials={initials}
-              placement="right"
-              onLogout={onLogout}
-              className="w-11 h-11 rounded-2xl p-0"
-            />
           </div>
         </Card.Content>
       </Card>

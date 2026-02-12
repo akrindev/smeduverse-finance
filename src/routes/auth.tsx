@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { ApiResponseError } from '@/lib/api-client'
+import { ThemeSwitcher } from '@/components/shared/theme-switcher'
 
 export const Route = createFileRoute('/auth')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -81,7 +82,10 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 relative">
+      <div className="absolute top-4 right-4">
+        <ThemeSwitcher />
+      </div>
       <div className="w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent mb-4 shadow-lg shadow-accent/25">

@@ -70,7 +70,7 @@ function ReportsPage() {
       </PageHeader>
 
       <Card className={surfaceCardClass}>
-        <Card.Content className="p-4">
+        <Card.Content>
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="inline-flex items-center gap-2 text-sm text-default-500">
               <Calendar className="w-4 h-4" />
@@ -128,40 +128,40 @@ function ReportsPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Tagihan</p>
                     <p className="text-xl font-semibold">{receivables.summary.total_bills}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Bruto</p>
                     <p className="text-xl font-semibold">{formatCurrency(receivables.summary.total_gross)}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Diskon</p>
                     <p className="text-xl font-semibold">{formatCurrency(receivables.summary.total_discount)}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Netto</p>
                     <p className="text-xl font-semibold text-success">{formatCurrency(receivables.summary.total_net)}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Sudah Dibayar</p>
                     <p className="text-xl font-semibold text-accent">{formatCurrency(receivables.summary.total_paid)}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Sisa Piutang</p>
                     <p className="text-xl font-semibold text-danger">
-                      {formatCurrency(receivables.summary.total_outstanding)}
+                      {formatCurrency(Number(receivables.summary.total_outstanding))}
                     </p>
                   </Card.Content>
                 </Card>
@@ -211,7 +211,7 @@ function ReportsPage() {
                             </td>
                             <td className={tableBodyCellClass}>{item.total_bills}</td>
                             <td className={`${tableBodyCellClass} font-medium`}>
-                              {formatCurrency(item.total_outstanding)}
+                              {formatCurrency(Number(item.total_outstanding))}
                             </td>
                           </tr>
                         ))}
@@ -233,13 +233,13 @@ function ReportsPage() {
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Transaksi</p>
                     <p className="text-xl font-semibold">{collections.summary.total_transactions}</p>
                   </Card.Content>
                 </Card>
                 <Card className={surfaceCardClass}>
-                  <Card.Content className="p-4">
+                  <Card.Content>
                     <p className="text-xs text-default-500 mb-1">Total Diterima</p>
                     <p className="text-xl font-semibold text-success">
                       {formatCurrency(collections.summary.total_collected)}

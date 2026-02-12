@@ -139,7 +139,7 @@ function DashboardOverview() {
               Lihat Semua
             </Button>
           </Card.Header>
-          <Card.Content className="px-0 pb-0">
+          <Card.Content>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                   <thead>
@@ -187,7 +187,7 @@ function DashboardOverview() {
             <Card.Title>Status Piutang</Card.Title>
             <Card.Description>Distribusi jumlah tagihan berdasarkan status</Card.Description>
           </Card.Header>
-          <Card.Content className="px-4 pb-4 sm:px-5 sm:pb-5 space-y-3">
+          <Card.Content className="space-y-3">
             {receivables.by_status.length === 0 ? (
               <p className="text-sm text-default-500">Belum ada data.</p>
             ) : (
@@ -205,7 +205,7 @@ function DashboardOverview() {
                     </Chip>
                     <span className="text-xs text-default-500">{item.total_bills} tagihan</span>
                   </div>
-                  <p className="text-sm font-medium mt-2">{formatCurrency(item.total_outstanding)}</p>
+                  <p className="text-sm font-medium mt-2">{formatCurrency(Number(item.total_outstanding))}</p>
                 </div>
               ))
             )}

@@ -353,7 +353,7 @@ function SummaryCard({
 }) {
   return (
     <Card className={surfaceCardClass}>
-      <Card.Content className="flex items-center gap-3 p-4 sm:p-5">
+      <Card.Content className="flex items-center gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${iconBgClass}`}>
           <Icon className={`h-5 w-5 ${iconColorClass}`} />
         </div>

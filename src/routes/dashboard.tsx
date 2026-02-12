@@ -82,15 +82,11 @@ function DashboardLayout() {
             sidebarExpanded={sidebarExpanded}
             onToggleExpand={() => setSidebarExpanded(!sidebarExpanded)}
             currentPath={currentPath}
-            displayName={displayName}
-            displayEmail={displayEmail}
-            initials={initials}
-            onLogout={handleLogout}
           />
 
           <section className="flex-1 min-w-0">
-            <Card className="rounded-[24px] border border-border/50 bg-surface/90 backdrop-blur-xl min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] lg:min-h-[calc(100vh-3rem)]">
-              <Card.Content className="p-4 sm:p-5 lg:p-6 flex flex-col h-full">
+            <Card className="min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2rem)] lg:min-h-[calc(100vh-3rem)]">
+              <Card.Content className="flex flex-col h-full">
                 <DashboardHeader
                   activeLabel={activeNav?.label ?? 'Dashboard'}
                   displayName={displayName}

@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Button, Card } from '@heroui/react'
+import { Card } from '@heroui/react'
 import { navItems } from '@/lib/nav-items'
 
 interface MobileBottomNavProps {
@@ -23,16 +23,15 @@ export function MobileBottomNav({ currentPath }: MobileBottomNavProps) {
             const Icon = item.icon
 
             return (
-              <Link key={item.to} to={item.to}>
-                <Button
-                  fullWidth
-                  isIconOnly
-                  variant={isActive ? 'primary' : 'ghost'}
-                  className={`h-9 rounded-xl ${isActive ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25' : ''}`}
-                  aria-label={item.label}
-                >
-                  <Icon className="w-4 h-4" />
-                </Button>
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`flex flex-col items-center justify-center h-10 rounded-xl transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-accent/50 ${
+                  isActive ? 'bg-accent text-accent-foreground shadow-md shadow-accent/25' : 'text-default-foreground'
+                }`}
+                aria-label={item.label}
+              >
+                <Icon className="w-4 h-4" />
               </Link>
             )
           })}
