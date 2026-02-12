@@ -8,7 +8,7 @@ import { TablePagination } from '@/lib/table-pagination'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { Button, Card, Chip } from '@heroui/react'
+import { Button, Card, Chip, Spinner } from '@heroui/react'
 import {
   surfaceCardClass,
   tableBodyCellClass,
@@ -28,6 +28,7 @@ function ClassListPage() {
     data: rombelsData,
     isLoading: rombelsLoading,
     isPlaceholderData,
+    isFetching,
     error: rombelsError,
   } = useRefRombels({ 
     per_page: pagination.pageSize, 
@@ -61,7 +62,12 @@ function ClassListPage() {
   return (
     <div className="space-y-6">
       <Card className={surfaceCardClass}>
-        <Card.Content>
+        <Card.Content className="relative min-h-[300px]">
+          {isFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+              <Spinner size="lg" />
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

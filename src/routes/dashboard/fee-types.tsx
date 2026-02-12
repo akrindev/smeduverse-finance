@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, Card, Chip, Input, TextField } from '@heroui/react'
+import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Search, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -31,7 +31,7 @@ function FeeTypesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const { data, isLoading, isPlaceholderData, error } = useFeeTypes({
+  const { data, isLoading, isPlaceholderData, isFetching, error } = useFeeTypes({
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
     search: searchQuery || undefined,
@@ -86,7 +86,12 @@ function FeeTypesPage() {
             </div>
           </TextField>
         </Card.Header>
-        <Card.Content>
+        <Card.Content className="relative min-h-[300px]">
+          {isFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+              <Spinner size="lg" />
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

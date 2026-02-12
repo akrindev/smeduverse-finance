@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Button, Card, Chip, Input, Tabs, TextField } from '@heroui/react'
+import { Button, Card, Chip, Input, Spinner, Tabs, TextField } from '@heroui/react'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Calendar, Download, Receipt } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -32,12 +32,14 @@ function ReportsPage() {
   const {
     data: receivablesData,
     isLoading: receivablesLoading,
+    isFetching: receivablesFetching,
     error: receivablesError,
   } = useReceivablesReport(filter)
 
   const {
     data: collectionsData,
     isLoading: collectionsLoading,
+    isFetching: collectionsFetching,
     error: collectionsError,
   } = useCollectionsReport(filter)
 
@@ -133,12 +135,17 @@ function ReportsPage() {
         </Tabs.List>
 
         <Tabs.Panel id="receivables" className="mt-6">
-          {receivablesLoading ? (
+          {receivablesLoading && !receivablesFetching ? (
             <LoadingState minHeight="300px" />
           ) : receivablesError ? (
             <ErrorState message="Gagal memuat data laporan piutang." />
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 relative">
+              {receivablesFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <Card className={surfaceCardClass}>
                   <Card.Content>
@@ -241,12 +248,17 @@ function ReportsPage() {
         </Tabs.Panel>
 
         <Tabs.Panel id="collections" className="mt-6">
-          {collectionsLoading ? (
+          {collectionsLoading && !collectionsFetching ? (
             <LoadingState minHeight="300px" />
           ) : collectionsError ? (
             <ErrorState message="Gagal memuat data laporan penerimaan." />
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 relative">
+              {collectionsFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Card className={surfaceCardClass}>
                   <Card.Content>

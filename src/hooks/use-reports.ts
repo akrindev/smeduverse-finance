@@ -21,6 +21,7 @@ export function useReceivablesReport(filters?: ReceivablesFilters) {
     queryKey: REPORT_KEYS.receivables(filters),
     queryFn: () =>
       apiGet<ReceivablesReport>('/reports/receivables', filters as Record<string, unknown>),
+    placeholderData: (previousData) => previousData,
   })
 }
 
@@ -29,6 +30,7 @@ export function useCollectionsReport(filters?: CollectionsFilters) {
     queryKey: REPORT_KEYS.collections(filters),
     queryFn: () =>
       apiGet<CollectionsReport>('/reports/collections', filters as Record<string, unknown>),
+    placeholderData: (previousData) => previousData,
   })
 }
 

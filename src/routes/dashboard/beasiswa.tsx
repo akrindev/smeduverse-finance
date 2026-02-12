@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { BadgePercent, CalendarDays, GraduationCap, Plus, Users } from 'lucide-react'
-import { Button, Card, Chip, Input, TextField } from '@heroui/react'
+import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
@@ -32,7 +32,7 @@ function BeasiswaPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const { data, isLoading, isPlaceholderData, error } = useScholarships({
+  const { data, isLoading, isPlaceholderData, isFetching, error } = useScholarships({
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
     search: searchQuery || undefined,
@@ -99,7 +99,12 @@ function BeasiswaPage() {
             />
           </TextField>
         </Card.Header>
-        <Card.Content>
+        <Card.Content className="relative min-h-[300px]">
+          {isFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+              <Spinner size="lg" />
+            </div>
+          )}
           {scholarshipsData.length === 0 ? (
             <EmptyState icon={GraduationCap} message="Tidak ada data beasiswa ditemukan." />
           ) : (

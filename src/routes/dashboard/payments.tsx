@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
-import { Button, Card, Chip, Input, TextField } from '@heroui/react'
+import { Button, Card, Chip, Input, Spinner, TextField } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
@@ -34,7 +34,7 @@ function PaymentsPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | Payment['status']>('all')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const { data, isLoading, isPlaceholderData, error } = usePayments({
+  const { data, isLoading, isPlaceholderData, isFetching, error } = usePayments({
     page: pagination.pageIndex + 1,
     per_page: pagination.pageSize,
     status: activeFilter === 'all' ? undefined : activeFilter,
@@ -162,7 +162,12 @@ function PaymentsPage() {
           </TextField>
         </Card.Header>
 
-        <Card.Content>
+        <Card.Content className="relative min-h-[300px]">
+          {isFetching && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+              <Spinner size="lg" />
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
