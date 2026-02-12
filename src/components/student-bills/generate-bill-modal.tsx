@@ -187,14 +187,16 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
                 <div className="flex gap-2 p-1 bg-surface rounded-xl border border-border/50">
                   <Button
                     size="sm"
-                    className={`flex-1 rounded-lg ${billType === 'spp' ? 'bg-accent text-accent-foreground shadow-sm' : 'variant-ghost'}`}
+                    variant={billType === 'spp' ? 'primary' : 'ghost'}
+                    className="flex-1 rounded-lg"
                     onPress={() => setBillType('spp')}
                   >
                     Tagihan SPP
                   </Button>
                   <Button
                     size="sm"
-                    className={`flex-1 rounded-lg ${billType === 'fee' ? 'bg-accent text-accent-foreground shadow-sm' : 'variant-ghost'}`}
+                    variant={billType === 'fee' ? 'primary' : 'ghost'}
+                    className="flex-1 rounded-lg"
                     onPress={() => setBillType('fee')}
                   >
                     Tagihan Lainnya
