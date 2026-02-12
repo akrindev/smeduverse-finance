@@ -32,6 +32,7 @@ export function useScholarships(params?: Record<string, unknown>) {
       >('/scholarships', params)
       return unwrapPaginated(response)
     },
+    placeholderData: (previousData) => previousData,
   })
 }
 

@@ -4,14 +4,21 @@ import { LoadingState } from '@/components/shared/loading-state'
 import { useRefRombel, useRefStudents } from '@/hooks/use-references'
 import { apiGet, unwrapPaginated } from '@/lib/api-client'
 import { formatCurrency } from '@/lib/format'
-import { cardHeaderClass, surfaceCardClass } from '@/lib/page-styles'
+import {
+  cardHeaderClass,
+  surfaceCardClass,
+  tableBodyCellClass,
+  tableHeadCellClass,
+} from '@/lib/page-styles'
 import { getRombelLabel } from '@/lib/tagihan-siswa'
+import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
-import { Button, Card } from '@heroui/react'
+import { Button, Card, Chip } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, User } from 'lucide-react'
-import { useMemo } from 'react'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { ArrowLeft, User as UserIcon } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 interface StudentSummary {
   totalBills: number
@@ -22,21 +29,29 @@ export const Route = createFileRoute('/dashboard/student-bills/$classId/')({
   component: ClassDetailPage,
 })
 
+const genderLabels: Record<string, string> = {
+  l: 'Laki-laki',
+  p: 'Perempuan',
+}
+
 function ClassDetailPage() {
   const { classId } = Route.useParams()
   const navigate = useNavigate()
 
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
+
   const { data: selectedClass, isLoading: classLoading } = useRefRombel(classId)
 
-  const studentsParams = useMemo(
-    () => ({ rombongan_belajar_id: classId, per_page: 100 }),
-    [classId],
-  )
   const {
     data: studentsData,
     isLoading: studentsLoading,
+    isPlaceholderData: studentsPlaceholder,
     error: studentsError,
-  } = useRefStudents(studentsParams)
+  } = useRefStudents({
+    rombongan_belajar_id: classId,
+    page: pagination.pageIndex + 1,
+    per_page: pagination.pageSize,
+  })
 
   const {
     data: classBillsData,
@@ -53,6 +68,7 @@ function ClassDetailPage() {
   })
 
   const students = studentsData?.data ?? []
+  const meta = studentsData?.meta
   const classBills = classBillsData?.data ?? []
 
   const studentSummaryMap = useMemo(() => {
@@ -67,14 +83,18 @@ function ClassDetailPage() {
       })
     }
 
-    for (const student of students) {
-      if (!map.has(student.student_id)) {
-        map.set(student.student_id, { totalBills: 0, totalOutstanding: 0 })
-      }
-    }
-
     return map
-  }, [classBills, students])
+  }, [classBills])
+
+  const table = useReactTable({
+    data: students,
+    columns: useMemo(() => [{ accessorKey: 'student_id' }], []),
+    pageCount: meta?.last_page ?? -1,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+  })
 
   function selectStudent(student: Student): void {
     navigate({
@@ -86,6 +106,8 @@ function ClassDetailPage() {
   function backToClasses(): void {
     navigate({ to: '/dashboard/student-bills', search: {}, replace: true })
   }
+
+  const isLoading = classLoading || classBillsLoading || (studentsLoading && !studentsPlaceholder)
 
   return (
     <div className="space-y-6">
@@ -111,55 +133,85 @@ function ClassDetailPage() {
 
       <Card className={surfaceCardClass}>
         <Card.Content>
-          {studentsLoading || classBillsLoading ? (
+          {isLoading ? (
             <LoadingState minHeight="260px" />
           ) : studentsError ? (
             <ErrorState message="Gagal memuat daftar siswa pada kelas ini." detail="Silakan coba lagi." />
           ) : students.length === 0 ? (
-            <EmptyState icon={User} message="Belum ada siswa aktif pada kelas ini." />
+            <EmptyState icon={UserIcon} message="Belum ada siswa aktif pada kelas ini." />
           ) : (
-            <div data-testid="student-list-view" className="space-y-2">
-              {students.map((student) => {
-                const studentSummary = studentSummaryMap.get(student.student_id) ?? {
-                  totalBills: 0,
-                  totalOutstanding: 0,
-                }
-
-                return (
-                  <div
-                    key={student.student_id}
-                    data-testid="student-list-item"
-                    role="button"
-                    tabIndex={0}
-                    className="p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 w-full text-left border border-border/50 hover:border-accent/40 transition-colors rounded-[24px] bg-surface/90 backdrop-blur-xl cursor-pointer"
-                    onClick={() => selectStudent(student)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        selectStudent(student)
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-t border-border/70">
+                      <th className={tableHeadCellClass}>Siswa</th>
+                      <th className={tableHeadCellClass}>NIPD / NISN</th>
+                      <th className={tableHeadCellClass}>Jenis Kelamin</th>
+                      <th className={tableHeadCellClass}>Status</th>
+                      <th className={tableHeadCellClass}>Tagihan</th>
+                      <th className={tableHeadCellClass}>Sisa</th>
+                      <th className={tableHeadCellClass}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => {
+                      const studentSummary = studentSummaryMap.get(student.student_id) ?? {
+                        totalBills: 0,
+                        totalOutstanding: 0,
                       }
-                    }}
-                  >
-                    <div>
-                      <p className="font-medium text-foreground">{student.fullname}</p>
-                      <p className="text-default-500 text-xs">{student.nipd || student.nisn || '-'}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-default/10 px-2 py-0.5 rounded-full text-[10px] text-default-600">
-                        {studentSummary.totalBills} tagihan
-                      </div>
-                      <div className={`px-2 py-0.5 rounded-full text-[10px] ${studentSummary.totalOutstanding > 0 ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}`}>
-                        {formatCurrency(studentSummary.totalOutstanding)}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+
+                      return (
+                        <tr key={student.student_id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                          <td className={`${tableBodyCellClass} font-medium text-default-700`}>{student.fullname}</td>
+                          <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
+                          <td className={tableBodyCellClass}>
+                            {student.jenis_kelamin ? genderLabels[student.jenis_kelamin.toLowerCase()] || student.jenis_kelamin : '-'}
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <Chip size="sm" variant="soft" color="success">
+                              <Chip.Label>Aktif</Chip.Label>
+                            </Chip>
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-medium">{studentSummary.totalBills} tagihan</span>
+                            </div>
+                          </td>
+                          <td className={`${tableBodyCellClass} font-semibold ${studentSummary.totalOutstanding > 0 ? 'text-danger' : 'text-success'}`}>
+                            {formatCurrency(studentSummary.totalOutstanding)}
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onPress={() => selectStudent(student)}
+                            >
+                              Pilih
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <TablePagination
+                pageIndex={pagination.pageIndex}
+                pageCount={table.getPageCount()}
+                pageSize={pagination.pageSize}
+                totalRows={meta?.total ?? 0}
+                visibleRows={students.length}
+                canPreviousPage={table.getCanPreviousPage()}
+                canNextPage={table.getCanNextPage()}
+                onPreviousPage={() => table.previousPage()}
+                onNextPage={() => table.nextPage()}
+              />
+            </>
           )}
         </Card.Content>
       </Card>
     </div>
   )
 }
-

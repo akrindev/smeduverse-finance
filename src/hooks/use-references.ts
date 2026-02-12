@@ -36,6 +36,7 @@ export function useRefStudents(filters?: RefStudentsFilters, options?: QueryOpti
       return unwrapPaginated(response)
     },
     enabled: options?.enabled ?? true,
+    placeholderData: (previousData) => previousData,
   })
 }
 
@@ -61,6 +62,7 @@ export function useRefRombels(filters?: RefRombelsFilters, options?: QueryOption
       return unwrapPaginated(response)
     },
     enabled: options?.enabled ?? true,
+    placeholderData: (previousData) => previousData,
   })
 }
 

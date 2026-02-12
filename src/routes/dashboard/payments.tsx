@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Receipt } from 'lucide-react'
 import { Button, Card, Chip, Input, TextField } from '@heroui/react'
 import { useEffect, useMemo, useState } from 'react'
@@ -32,16 +32,21 @@ const statusConfig: Record<Payment['status'], { label: string; color: 'success' 
 function PaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<'all' | Payment['status']>('all')
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const { data, isLoading, error } = usePayments()
-  const payments = data?.data ?? []
+  const { data, isLoading, isPlaceholderData, error } = usePayments({
+    page: pagination.pageIndex + 1,
+    per_page: pagination.pageSize,
+    status: activeFilter === 'all' ? undefined : activeFilter,
+  })
+
+  const paymentsData = data?.data ?? []
+  const meta = data?.meta
 
   const filteredPayments = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
 
-    return payments.filter((payment) => {
-      const matchesFilter = activeFilter === 'all' || payment.status === activeFilter
+    return paymentsData.filter((payment) => {
       const matchesSearch =
         query.length === 0 ||
         payment.payment_number.toLowerCase().includes(query) ||
@@ -50,13 +55,13 @@ function PaymentsPage() {
         payment.student?.nisn?.toLowerCase().includes(query) ||
         (payment.reference_number ?? '').toLowerCase().includes(query)
 
-      return matchesFilter && matchesSearch
+      return matchesSearch
     })
-  }, [activeFilter, payments, searchQuery])
+  }, [paymentsData, searchQuery])
 
-  const confirmedCount = payments.filter((item) => item.status === 'confirmed').length
-  const voidCount = payments.filter((item) => item.status === 'void').length
-  const confirmedAmount = payments
+  const confirmedCount = paymentsData.filter((item) => item.status === 'confirmed').length
+  const voidCount = paymentsData.filter((item) => item.status === 'void').length
+  const confirmedAmount = paymentsData
     .filter((item) => item.status === 'confirmed')
     .reduce((sum, item) => sum + item.total_amount, 0)
 
@@ -67,15 +72,14 @@ function PaymentsPage() {
   const table = useReactTable({
     data: filteredPayments,
     columns: useMemo(() => [{ accessorKey: 'id' }], []),
+    pageCount: meta?.last_page ?? -1,
     state: { pagination },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
   })
 
-  const paginatedPayments = table.getRowModel().rows.map((row) => row.original)
-
-  if (isLoading) {
+  if (isLoading && !isPlaceholderData) {
     return <LoadingState />
   }
 
@@ -98,7 +102,7 @@ function PaymentsPage() {
           iconBgClass="bg-accent-soft"
           iconColorClass="text-accent"
           label="Total Transaksi"
-          value={payments.length}
+          value={meta?.total ?? 0}
         />
         <StatCard
           icon={ArrowDownLeft}
@@ -144,7 +148,7 @@ function PaymentsPage() {
               Void
             </Button>
             <Chip size="sm" variant="soft" color="default" className="ml-auto">
-              <Chip.Label>{filteredPayments.length} data</Chip.Label>
+              <Chip.Label>{meta?.total ?? 0} data</Chip.Label>
             </Chip>
           </div>
 
@@ -173,7 +177,7 @@ function PaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedPayments.map((payment) => (
+                {filteredPayments.map((payment) => (
                   <tr key={payment.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
                     <td className={`${tableBodyCellClass} font-mono text-xs`}>{payment.payment_number}</td>
                     <td className={tableBodyCellClass}>
@@ -216,8 +220,8 @@ function PaymentsPage() {
             pageIndex={pagination.pageIndex}
             pageCount={table.getPageCount()}
             pageSize={pagination.pageSize}
-            totalRows={filteredPayments.length}
-            visibleRows={paginatedPayments.length}
+            totalRows={meta?.total ?? 0}
+            visibleRows={filteredPayments.length}
             canPreviousPage={table.getCanPreviousPage()}
             canNextPage={table.getCanNextPage()}
             onPreviousPage={() => table.previousPage()}

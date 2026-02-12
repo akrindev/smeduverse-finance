@@ -4,8 +4,17 @@ import { useRefRombels } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import { getRombelLabel, sortRombelsByJenjang } from '@/lib/tagihan-siswa'
 import type { Rombel } from '@/types/finance'
+import { TablePagination } from '@/lib/table-pagination'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
+import { Button, Card, Chip } from '@heroui/react'
+import {
+  surfaceCardClass,
+  tableBodyCellClass,
+  tableHeadCellClass,
+} from '@/lib/page-styles'
+import { Users } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard/student-bills/')({
   component: ClassListPage,
@@ -13,15 +22,30 @@ export const Route = createFileRoute('/dashboard/student-bills/')({
 
 function ClassListPage() {
   const navigate = useNavigate()
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   
-  const rombelsParams = useMemo(() => ({ per_page: 100, active_only: true }), [])
   const {
     data: rombelsData,
     isLoading: rombelsLoading,
+    isPlaceholderData,
     error: rombelsError,
-  } = useRefRombels(rombelsParams)
+  } = useRefRombels({ 
+    per_page: pagination.pageSize, 
+    page: pagination.pageIndex + 1,
+  })
 
+  const meta = rombelsData?.meta
   const rombels = useMemo(() => sortRombelsByJenjang(rombelsData?.data ?? []), [rombelsData?.data])
+
+  const table = useReactTable({
+    data: rombels,
+    columns: useMemo(() => [{ accessorKey: 'id' }], []),
+    pageCount: meta?.last_page ?? -1,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+  })
 
   function selectClass(rombel: Rombel): void {
     if ((rombel.anggota_count ?? 0) === 0) return
@@ -31,80 +55,87 @@ function ClassListPage() {
     })
   }
 
-  if (rombelsLoading) return <LoadingState minHeight="300px" />
+  if (rombelsLoading && !isPlaceholderData) return <LoadingState minHeight="300px" />
   if (rombelsError) return <ErrorState message="Gagal memuat daftar kelas." detail="Silakan coba lagi dalam beberapa saat." />
 
   return (
     <div className="space-y-6">
-      <div data-testid="class-cards-grid" className="gap-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-        {rombels.map((rombel) => {
-          const metrics = rombel.summary
-          const activeStudents = rombel.anggota_count ?? 0
-          const isDisabled = activeStudents === 0
-          const label = getRombelLabel(rombel)
+      <Card className={surfaceCardClass}>
+        <Card.Content>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-t border-border/70">
+                  <th className={tableHeadCellClass}>Nama Kelas</th>
+                  <th className={tableHeadCellClass}>Jenjang</th>
+                  <th className={tableHeadCellClass}>Jumlah Siswa</th>
+                  <th className={tableHeadCellClass}>Total Tagihan</th>
+                  <th className={tableHeadCellClass}>Total Terbayar</th>
+                  <th className={tableHeadCellClass}>Sisa Piutang</th>
+                  <th className={tableHeadCellClass}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rombels.map((rombel) => {
+                  const metrics = rombel.summary
+                  const activeStudents = rombel.anggota_count ?? 0
+                  const isDisabled = activeStudents === 0
+                  const label = getRombelLabel(rombel)
 
-          return (
-            <div
-              key={rombel.id}
-              data-testid="class-card"
-              role="button"
-              tabIndex={isDisabled ? -1 : 0}
-              aria-disabled={isDisabled}
-              className={`p-4 flex flex-col items-stretch text-left border border-border/50 hover:border-accent/40 transition-colors rounded-[24px] bg-surface/90 backdrop-blur-xl ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
-              onClick={() => !isDisabled && selectClass(rombel)}
-              onKeyDown={(e) => {
-                if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
-                  e.preventDefault()
-                  selectClass(rombel)
-                }
-              }}
-            >
-              <div className="flex justify-between items-start gap-3 mb-4 w-full">
-                <div>
-                  <p className="font-semibold text-foreground text-lg">{label}</p>
-                  <p className="text-default-500 text-xs">
-                    Jenjang {rombel.tingkat_kelas ?? '-'}
-                  </p>
-                </div>
-                <div className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${isDisabled ? 'bg-default/10 text-default-500' : 'bg-accent/10 text-accent'}`}>
-                  {activeStudents} siswa
-                </div>
-              </div>
+                  return (
+                    <tr key={rombel.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                      <td className={`${tableBodyCellClass} font-semibold`}>{label}</td>
+                      <td className={tableBodyCellClass}>{rombel.tingkat_kelas ?? '-'}</td>
+                      <td className={tableBodyCellClass}>
+                        <Chip size="sm" variant="soft" color={isDisabled ? 'default' : 'accent'}>
+                          <Chip.Label>{activeStudents} siswa</Chip.Label>
+                        </Chip>
+                      </td>
+                      <td className={tableBodyCellClass}>{formatCurrency(metrics?.total_net ?? 0)}</td>
+                      <td className={tableBodyCellClass}>{formatCurrency(metrics?.total_paid ?? 0)}</td>
+                      <td className={`${tableBodyCellClass} font-semibold ${ (metrics?.total_outstanding ?? 0) > 0 ? 'text-danger' : 'text-success'}`}>
+                        {formatCurrency(metrics?.total_outstanding ?? 0)}
+                      </td>
+                      <td className={tableBodyCellClass}>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          isDisabled={isDisabled}
+                          onPress={() => selectClass(rombel)}
+                        >
+                          Pilih
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
-              <div className="space-y-2">
-                <MetricRow label="Total Tagihan Netto" value={formatCurrency(metrics?.total_net ?? 0)} />
-                <MetricRow label="Total Terbayar" value={formatCurrency(metrics?.total_paid ?? 0)} />
-                <MetricRow
-                  label="Total Outstanding"
-                  value={formatCurrency(metrics?.total_outstanding ?? 0)}
-                  valueClass={(metrics?.total_outstanding ?? 0) > 0 ? 'text-danger' : 'text-success'}
-                />
+          {rombels.length === 0 && (
+            <div className="py-12">
+              <div className="flex flex-col items-center justify-center text-center">
+                <Users className="w-12 h-12 text-default-300 mb-4" />
+                <h3 className="text-lg font-semibold text-default-700">Tidak ada kelas ditemukan</h3>
+                <p className="text-sm text-default-500 max-w-xs">Data kelas tidak tersedia atau tidak ada yang aktif.</p>
               </div>
             </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
+          )}
 
-function MetricRow({
-  label,
-  value,
-  valueClass,
-  testId,
-}: {
-  label: string
-  value: string
-  valueClass?: string
-  testId?: string
-}) {
-  return (
-    <div className="flex justify-between items-center">
-      <p className="text-default-500 text-sm">{label}</p>
-      <p data-testid={testId} className={`text-sm font-semibold ${valueClass ?? 'text-foreground'}`}>
-        {value}
-      </p>
+          <TablePagination
+            pageIndex={pagination.pageIndex}
+            pageCount={table.getPageCount()}
+            pageSize={pagination.pageSize}
+            totalRows={meta?.total ?? 0}
+            visibleRows={rombels.length}
+            canPreviousPage={table.getCanPreviousPage()}
+            canNextPage={table.getCanNextPage()}
+            onPreviousPage={() => table.previousPage()}
+            onNextPage={() => table.nextPage()}
+          />
+        </Card.Content>
+      </Card>
     </div>
   )
 }

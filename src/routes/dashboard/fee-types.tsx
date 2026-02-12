@@ -1,12 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Button, Card, Chip, Input, TextField } from '@heroui/react'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Search, Plus } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { useFeeTypes } from '@/hooks/use-fee-types'
+import { TablePagination } from '@/lib/table-pagination'
 import {
   cardHeaderClass,
   pageShellClass,
@@ -27,16 +29,27 @@ const billingCycleLabels: Record<string, string> = {
 
 function FeeTypesPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { data, isLoading, error } = useFeeTypes()
-  const feeTypes = data?.data ?? []
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const filteredFeeTypes = feeTypes.filter(
-    (ft) =>
-      ft.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ft.code.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const { data, isLoading, isPlaceholderData, error } = useFeeTypes({
+    page: pagination.pageIndex + 1,
+    per_page: pagination.pageSize,
+    search: searchQuery || undefined,
+  })
+  const feeTypesData = data?.data ?? []
+  const meta = data?.meta
 
-  if (isLoading) {
+  const table = useReactTable({
+    data: feeTypesData,
+    columns: useMemo(() => [{ accessorKey: 'id' }], []),
+    pageCount: meta?.last_page ?? -1,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    manualPagination: true,
+  })
+
+  if (isLoading && !isPlaceholderData) {
     return <LoadingState minHeight="400px" />
   }
 
@@ -65,7 +78,10 @@ function FeeTypesPage() {
                 placeholder="Cari jenis biaya..."
                 className="pl-10"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+                }}
               />
             </div>
           </TextField>
@@ -82,7 +98,7 @@ function FeeTypesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredFeeTypes.map((feeType) => (
+                {feeTypesData.map((feeType) => (
                   <tr key={feeType.id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
                     <td className={`${tableBodyCellClass} font-mono text-xs text-default-500`}>{feeType.code}</td>
                     <td className={`${tableBodyCellClass} font-medium`}>{feeType.name}</td>
@@ -102,9 +118,21 @@ function FeeTypesPage() {
             </table>
           </div>
 
-          {filteredFeeTypes.length === 0 && (
+          {feeTypesData.length === 0 && (
             <EmptyState icon={Search} message="Tidak ada jenis biaya ditemukan" />
           )}
+
+          <TablePagination
+            pageIndex={pagination.pageIndex}
+            pageCount={table.getPageCount()}
+            pageSize={pagination.pageSize}
+            totalRows={meta?.total ?? 0}
+            visibleRows={feeTypesData.length}
+            canPreviousPage={table.getCanPreviousPage()}
+            canNextPage={table.getCanNextPage()}
+            onPreviousPage={() => table.previousPage()}
+            onNextPage={() => table.nextPage()}
+          />
         </Card.Content>
       </Card>
     </div>

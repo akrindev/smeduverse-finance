@@ -13,7 +13,7 @@ import type { Bill } from '@/types/finance'
 import { Button, Card, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -28,31 +28,41 @@ function StudentDetailPage() {
 
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
   const [billToPay, setBillToPay] = useState<Bill | null>(null)
-  const [otherPagination, setOtherPagination] = useState({ pageIndex: 0, pageSize: 8 })
+  const [otherPagination, setOtherPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
 
-  const billsParams = useMemo(() => ({ per_page: 100 }), [])
   const {
-    data: billsData,
-    isLoading: billsLoading,
-    error: billsError,
-  } = useStudentBills(studentId, billsParams)
+    data: allBillsData,
+    isLoading: allBillsLoading,
+  } = useStudentBills(studentId, { per_page: 500 })
 
-  const bills = billsData?.data ?? []
+  const {
+    data: paginatedBillsData,
+    isLoading: paginatedBillsLoading,
+    isPlaceholderData,
+    error: billsError,
+  } = useStudentBills(studentId, {
+    page: otherPagination.pageIndex + 1,
+    per_page: otherPagination.pageSize,
+  })
+
+  const allBills = allBillsData?.data ?? []
+  const paginatedBills = paginatedBillsData?.data ?? []
+  const meta = paginatedBillsData?.meta
 
   const summary = useMemo(() => {
-    const totalBills = bills.length
-    const totalNet = bills.reduce((sum, bill) => sum + bill.amount_net, 0)
-    const totalPaid = bills.reduce((sum, bill) => sum + bill.amount_paid, 0)
-    const totalOutstanding = bills.reduce((sum, bill) => sum + bill.amount_outstanding, 0)
+    const totalBills = allBills.length
+    const totalNet = allBills.reduce((sum, bill) => sum + bill.amount_net, 0)
+    const totalPaid = allBills.reduce((sum, bill) => sum + bill.amount_paid, 0)
+    const totalOutstanding = allBills.reduce((sum, bill) => sum + bill.amount_outstanding, 0)
     return { totalBills, totalNet, totalPaid, totalOutstanding }
-  }, [bills])
+  }, [allBills])
 
-  const sppBills = useMemo(() => bills.filter((bill) => bill.fee_type?.billing_cycle === 'monthly'), [bills])
-  const otherBills = useMemo(() => bills.filter((bill) => bill.fee_type?.billing_cycle !== 'monthly'), [bills])
+  const sppBills = useMemo(() => allBills.filter((bill) => bill.fee_type?.billing_cycle === 'monthly'), [allBills])
+  const otherBills = useMemo(() => paginatedBills.filter((bill) => bill.fee_type?.billing_cycle !== 'monthly'), [paginatedBills])
 
   const sppByYear = useMemo(() => {
     const grouped = new Map<number, Map<number, Bill>>()
@@ -77,13 +87,16 @@ function StudentDetailPage() {
   const otherTable = useReactTable({
     data: otherBills,
     columns: otherTableColumns,
+    pageCount: meta?.last_page ?? -1,
     state: { pagination: otherPagination },
     onPaginationChange: setOtherPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
   })
 
-  const paginatedOtherBills = otherTable.getRowModel().rows.map((row) => row.original)
+  const billsLoading = allBillsLoading || (paginatedBillsLoading && !isPlaceholderData)
+
+  const paginatedOtherBills = otherBills
 
   const canPaySelectedBill = Boolean(selectedBill && selectedBill.status !== 'void' && selectedBill.amount_outstanding > 0)
 
@@ -308,7 +321,7 @@ function StudentDetailPage() {
                       pageIndex={otherPagination.pageIndex}
                       pageCount={otherTable.getPageCount()}
                       pageSize={otherPagination.pageSize}
-                      totalRows={otherBills.length}
+                      totalRows={meta?.total ?? 0}
                       visibleRows={paginatedOtherBills.length}
                       canPreviousPage={otherTable.getCanPreviousPage()}
                       canNextPage={otherTable.getCanNextPage()}

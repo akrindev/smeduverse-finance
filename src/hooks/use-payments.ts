@@ -23,6 +23,7 @@ export function usePayments(filters?: PaymentFilters) {
       >('/payments', filters as Record<string, unknown>)
       return unwrapPaginated(response)
     },
+    placeholderData: (previousData) => previousData,
   })
 }
 

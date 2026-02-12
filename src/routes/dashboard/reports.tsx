@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Button, Card, Chip, Input, Tabs, TextField } from '@heroui/react'
+import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { Calendar, Download, Receipt } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
@@ -40,7 +41,7 @@ function ReportsPage() {
     error: collectionsError,
   } = useCollectionsReport(filter)
 
-  const receivables = receivablesData ?? {
+  const receivables = useMemo(() => receivablesData ?? {
     summary: {
       total_bills: 0,
       total_gross: 0,
@@ -50,15 +51,27 @@ function ReportsPage() {
       total_outstanding: 0,
     },
     by_status: [],
-  }
+  }, [receivablesData])
 
-  const collections = collectionsData ?? {
+  const collections = useMemo(() => collectionsData ?? {
     summary: {
       total_transactions: 0,
       total_collected: 0,
     },
     daily: [],
-  }
+  }, [collectionsData])
+
+  const receivablesTable = useReactTable({
+    data: receivables.by_status,
+    columns: useMemo(() => [{ accessorKey: 'status' }], []),
+    getCoreRowModel: getCoreRowModel(),
+  })
+
+  const collectionsTable = useReactTable({
+    data: collections.daily,
+    columns: useMemo(() => [{ accessorKey: 'date' }], []),
+    getCoreRowModel: getCoreRowModel(),
+  })
 
   return (
     <div className={pageShellClass}>
@@ -182,39 +195,42 @@ function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {receivables.by_status.map((item) => (
-                          <tr key={item.status} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
-                            <td className={tableBodyCellClass}>
-                              <Chip
-                                size="sm"
-                                variant="soft"
-                                color={
-                                  item.status === 'paid'
-                                    ? 'success'
-                                    : item.status === 'partial'
-                                      ? 'warning'
-                                      : item.status === 'unpaid'
-                                        ? 'danger'
-                                        : 'default'
-                                }
-                              >
-                                <Chip.Label>
-                                  {item.status === 'paid'
-                                    ? 'Lunas'
-                                    : item.status === 'partial'
-                                      ? 'Sebagian'
-                                      : item.status === 'unpaid'
-                                        ? 'Belum Bayar'
-                                        : 'Batal'}
-                                </Chip.Label>
-                              </Chip>
-                            </td>
-                            <td className={tableBodyCellClass}>{item.total_bills}</td>
-                            <td className={`${tableBodyCellClass} font-medium`}>
-                              {formatCurrency(Number(item.total_outstanding))}
-                            </td>
-                          </tr>
-                        ))}
+                        {receivablesTable.getRowModel().rows.map((row) => {
+                          const item = row.original
+                          return (
+                            <tr key={item.status} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                              <td className={tableBodyCellClass}>
+                                <Chip
+                                  size="sm"
+                                  variant="soft"
+                                  color={
+                                    item.status === 'paid'
+                                      ? 'success'
+                                      : item.status === 'partial'
+                                        ? 'warning'
+                                        : item.status === 'unpaid'
+                                          ? 'danger'
+                                          : 'default'
+                                  }
+                                >
+                                  <Chip.Label>
+                                    {item.status === 'paid'
+                                      ? 'Lunas'
+                                      : item.status === 'partial'
+                                        ? 'Sebagian'
+                                        : item.status === 'unpaid'
+                                          ? 'Belum Bayar'
+                                          : 'Batal'}
+                                  </Chip.Label>
+                                </Chip>
+                              </td>
+                              <td className={tableBodyCellClass}>{item.total_bills}</td>
+                              <td className={`${tableBodyCellClass} font-medium`}>
+                                {formatCurrency(Number(item.total_outstanding))}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -263,15 +279,18 @@ function ReportsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {collections.daily.map((item) => (
-                          <tr key={item.date} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
-                            <td className={tableBodyCellClass}>{item.date}</td>
-                            <td className={tableBodyCellClass}>{item.total_transactions}</td>
-                            <td className={`${tableBodyCellClass} font-medium`}>
-                              {formatCurrency(item.total_collected)}
-                            </td>
-                          </tr>
-                        ))}
+                        {collectionsTable.getRowModel().rows.map((row) => {
+                          const item = row.original
+                          return (
+                            <tr key={item.date} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
+                              <td className={tableBodyCellClass}>{item.date}</td>
+                              <td className={tableBodyCellClass}>{item.total_transactions}</td>
+                              <td className={`${tableBodyCellClass} font-medium`}>
+                                {formatCurrency(item.total_collected)}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>

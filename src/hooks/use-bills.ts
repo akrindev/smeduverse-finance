@@ -36,6 +36,7 @@ export function useBills(filters?: BillFilters) {
       )
       return unwrapPaginated(response)
     },
+    placeholderData: (previousData) => previousData,
   })
 }
 
@@ -61,6 +62,7 @@ export function useStudentBills(studentId: string, params?: Record<string, unkno
       return unwrapPaginated(response)
     },
     enabled: !!studentId,
+    placeholderData: (previousData) => previousData,
   })
 }
 

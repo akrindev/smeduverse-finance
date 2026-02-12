@@ -32,6 +32,7 @@ export function useFeeTypes(params?: Record<string, unknown>) {
 
       return unwrapPaginated(response)
     },
+    placeholderData: (previousData) => previousData,
   })
 }
 

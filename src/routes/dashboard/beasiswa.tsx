@@ -1,13 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { BadgePercent, CalendarDays, GraduationCap, Plus, Users } from 'lucide-react'
 import { Button, Card, Chip, Input, TextField } from '@heroui/react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatCard } from '@/components/shared/stat-card'
 import { useScholarships } from '@/hooks/use-scholarships'
+import { TablePagination } from '@/lib/table-pagination'
 import { formatCurrency } from '@/lib/format'
 import {
   cardHeaderClass,
@@ -29,30 +30,21 @@ function formatScholarshipValue(discountType: 'fixed' | 'percent', discountValue
 
 function BeasiswaPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const { data, isLoading, error } = useScholarships()
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
-  const scholarships = data?.data ?? []
+  const { data, isLoading, isPlaceholderData, error } = useScholarships({
+    page: pagination.pageIndex + 1,
+    per_page: pagination.pageSize,
+    search: searchQuery || undefined,
+  })
 
-  const filteredScholarships = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+  const scholarshipsData = data?.data ?? []
+  const meta = data?.meta
 
-    if (!query) {
-      return scholarships
-    }
+  const activeCount = scholarshipsData.filter((item) => item.is_active).length
+  const inactiveCount = scholarshipsData.length - activeCount
 
-    return scholarships.filter((item) => {
-      return (
-        item.name.toLowerCase().includes(query) ||
-        item.code.toLowerCase().includes(query) ||
-        (item.description ?? '').toLowerCase().includes(query)
-      )
-    })
-  }, [scholarships, searchQuery])
-
-  const activeCount = scholarships.filter((item) => item.is_active).length
-  const inactiveCount = scholarships.length - activeCount
-
-  if (isLoading) {
+  if (isLoading && !isPlaceholderData) {
     return <LoadingState />
   }
 
@@ -75,7 +67,7 @@ function BeasiswaPage() {
           iconBgClass="bg-accent-soft"
           iconColorClass="text-accent"
           label="Total Program"
-          value={scholarships.length}
+          value={meta?.total ?? 0}
         />
         <StatCard
           icon={Users}
@@ -99,61 +91,78 @@ function BeasiswaPage() {
             <Input
               aria-label="Cari beasiswa"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value)
+                setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+              }}
               placeholder="Cari nama, kode, atau deskripsi beasiswa"
             />
           </TextField>
         </Card.Header>
         <Card.Content>
-          {filteredScholarships.length === 0 ? (
+          {scholarshipsData.length === 0 ? (
             <EmptyState icon={GraduationCap} message="Tidak ada data beasiswa ditemukan." />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredScholarships.map((item) => (
-                <Card key={item.id} className={surfaceCardClass}>
-                  <Card.Content className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs text-default-500 font-mono">{item.code}</p>
-                        <h3 className="text-base font-semibold mt-1">{item.name}</h3>
-                      </div>
-                      <Chip
-                        size="sm"
-                        variant="soft"
-                        color={item.is_active ? 'success' : 'default'}
-                      >
-                        <Chip.Label>{item.is_active ? 'Aktif' : 'Nonaktif'}</Chip.Label>
-                      </Chip>
-                    </div>
-
-                    <p className="text-sm text-default-500">
-                      {item.description ?? 'Tanpa deskripsi'}
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-3 pt-1">
-                      <div className="rounded-2xl bg-accent-soft/40 p-3">
-                        <div className="text-xs text-default-500 flex items-center gap-1.5">
-                          <BadgePercent className="w-3.5 h-3.5" />
-                          Nilai Diskon
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                {scholarshipsData.map((item) => (
+                  <Card key={item.id} className={surfaceCardClass}>
+                    <Card.Content className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs text-default-500 font-mono">{item.code}</p>
+                          <h3 className="text-base font-semibold mt-1">{item.name}</h3>
                         </div>
-                        <p className="text-sm font-semibold mt-1">
-                          {formatScholarshipValue(item.discount_type, item.discount_value)}
-                        </p>
+                        <Chip
+                          size="sm"
+                          variant="soft"
+                          color={item.is_active ? 'success' : 'default'}
+                        >
+                          <Chip.Label>{item.is_active ? 'Aktif' : 'Nonaktif'}</Chip.Label>
+                        </Chip>
                       </div>
-                      <div className="rounded-2xl bg-surface p-3 border border-border/50">
-                        <div className="text-xs text-default-500">Tipe Biaya</div>
-                        <p className="text-sm font-semibold mt-1">{item.fee_type?.name ?? 'Semua biaya'}</p>
-                      </div>
-                    </div>
 
-                    <div className="text-xs text-default-500">
-                      Periode:{' '}
-                      {item.start_date ?? '-'} sampai {item.end_date ?? '-'}
-                    </div>
-                  </Card.Content>
-                </Card>
-              ))}
-            </div>
+                      <p className="text-sm text-default-500 line-clamp-2 min-h-[40px]">
+                        {item.description ?? 'Tanpa deskripsi'}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-3 pt-1">
+                        <div className="rounded-2xl bg-accent-soft/40 p-3">
+                          <div className="text-xs text-default-500 flex items-center gap-1.5">
+                            <BadgePercent className="w-3.5 h-3.5" />
+                            Nilai Diskon
+                          </div>
+                          <p className="text-sm font-semibold mt-1">
+                            {formatScholarshipValue(item.discount_type, item.discount_value)}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-surface p-3 border border-border/50">
+                          <div className="text-xs text-default-500">Tipe Biaya</div>
+                          <p className="text-sm font-semibold mt-1 truncate">{item.fee_type?.name ?? 'Semua biaya'}</p>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-default-500">
+                        Periode:{' '}
+                        {item.start_date ?? '-'} sampai {item.end_date ?? '-'}
+                      </div>
+                    </Card.Content>
+                  </Card>
+                ))}
+              </div>
+
+              <TablePagination
+                pageIndex={pagination.pageIndex}
+                pageCount={meta?.last_page ?? 1}
+                pageSize={pagination.pageSize}
+                totalRows={meta?.total ?? 0}
+                visibleRows={scholarshipsData.length}
+                canPreviousPage={pagination.pageIndex > 0}
+                canNextPage={pagination.pageIndex < (meta?.last_page ?? 1) - 1}
+                onPreviousPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }))}
+                onNextPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }))}
+              />
+            </>
           )}
         </Card.Content>
       </Card>
