@@ -11,6 +11,7 @@ import { z } from 'zod'
 
 const studentBillsSearchSchema = z.object({
   search: z.string().optional(),
+  search_by: z.enum(['class', 'student']).optional(),
   tahun_ajaran_id: z.number().optional(),
   semester_id: z.number().optional(),
 })
@@ -26,6 +27,8 @@ function StudentBillsLayout() {
   const search = useSearch({ from: '/dashboard/student-bills' })
   const navigate = useNavigate({ from: Route.fullPath })
   const queryClient = useQueryClient()
+  const searchBy = search.search_by ?? 'class'
+  const searchPlaceholder = searchBy === 'student' ? 'Cari siswa...' : 'Cari kelas...'
   
   const [localSearch, setLocalSearch] = useState(search.search || '')
   const generateModalState = useOverlayState()
@@ -64,13 +67,13 @@ function StudentBillsLayout() {
         </Button> */}
       </PageHeader>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <TextField className="md:col-span-2">
+      <div className="gap-4 grid grid-cols-1 md:grid-cols-5 mb-6">
+        <TextField className="md:col-span-3">
           <Label>Cari</Label>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-default-500 z-10" />
+            <Search className="top-1/2 left-3 z-10 absolute w-4 h-4 text-default-500 -translate-y-1/2" />
             <Input
-              placeholder="Cari kelas atau siswa..."
+              placeholder={searchPlaceholder}
               className="pl-10"
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
@@ -79,6 +82,27 @@ function StudentBillsLayout() {
             />
           </div>
         </TextField>
+
+        <Select
+          aria-label="Cari Berdasarkan"
+          value={searchBy}
+          onChange={(val) => {
+            const nextSearchBy = val === 'student' ? 'student' : 'class'
+            updateSearch({ search_by: nextSearchBy })
+          }}
+        >
+          <Label>Berdasarkan</Label>
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="class" textValue="Kelas">Kelas</ListBox.Item>
+              <ListBox.Item id="student" textValue="Siswa">Siswa</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
 
         <Select
           aria-label="Tahun Ajaran"
