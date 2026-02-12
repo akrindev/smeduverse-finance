@@ -8,13 +8,14 @@ import { TablePagination } from '@/lib/table-pagination'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { Button, Card, Chip, Spinner } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import {
   surfaceCardClass,
   tableBodyCellClass,
   tableHeadCellClass,
 } from '@/lib/page-styles'
-import { Users } from 'lucide-react'
+import { Users, Calculator } from 'lucide-react'
+import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
 
 export const Route = createFileRoute('/dashboard/student-bills/')({
   component: ClassListPage,
@@ -25,12 +26,16 @@ function ClassListPage() {
   const search = useSearch({ from: '/dashboard/student-bills' })
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   
+  const generateModalState = useOverlayState()
+  const [targetClass, setTargetClass] = useState<Rombel | null>(null)
+
   const {
     data: rombelsData,
     isLoading: rombelsLoading,
     isPlaceholderData,
     isFetching,
     error: rombelsError,
+    refetch,
   } = useRefRombels({ 
     per_page: pagination.pageSize, 
     page: pagination.pageIndex + 1,
@@ -63,6 +68,11 @@ function ClassListPage() {
     })
   }
 
+  function openGenerateModal(rombel: Rombel): void {
+    setTargetClass(rombel)
+    generateModalState.open()
+  }
+
   if (rombelsLoading && !isPlaceholderData) return <LoadingState minHeight="300px" />
   if (rombelsError) return <ErrorState message="Gagal memuat daftar kelas." detail="Silakan coba lagi dalam beberapa saat." />
 
@@ -85,7 +95,7 @@ function ClassListPage() {
                   <th className={tableHeadCellClass}>Total Tagihan</th>
                   <th className={tableHeadCellClass}>Total Terbayar</th>
                   <th className={tableHeadCellClass}>Sisa Piutang</th>
-                  <th className={tableHeadCellClass}>Aksi</th>
+                  <th className={`${tableHeadCellClass} text-right`}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,15 +119,27 @@ function ClassListPage() {
                       <td className={`${tableBodyCellClass} font-semibold ${ (metrics?.total_outstanding ?? 0) > 0 ? 'text-danger' : 'text-success'}`}>
                         {formatCurrency(metrics?.total_outstanding ?? 0)}
                       </td>
-                      <td className={tableBodyCellClass}>
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          isDisabled={isDisabled}
-                          onPress={() => selectClass(rombel)}
-                        >
-                          Pilih
-                        </Button>
+                      <td className={`${tableBodyCellClass} text-right`}>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            isIconOnly
+                            isDisabled={isDisabled}
+                            onPress={() => openGenerateModal(rombel)}
+                            aria-label="Generate tagihan"
+                          >
+                            <Calculator className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            isDisabled={isDisabled}
+                            onPress={() => selectClass(rombel)}
+                          >
+                            Pilih
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -149,6 +171,17 @@ function ClassListPage() {
           />
         </Card.Content>
       </Card>
+
+      {targetClass && (
+        <GenerateBillModal
+          state={generateModalState}
+          selectedClass={targetClass}
+          studentIds={[]}
+          onSuccess={() => {
+            refetch()
+          }}
+        />
+      )}
     </div>
   )
 }

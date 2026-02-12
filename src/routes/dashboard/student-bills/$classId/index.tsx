@@ -13,12 +13,13 @@ import {
 import { getRombelLabel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
-import { Button, Card, Chip, Spinner } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, User as UserIcon } from 'lucide-react'
+import { ArrowLeft, User as UserIcon, Calculator } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
+import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
 
 interface StudentSummary {
   totalBills: number
@@ -40,6 +41,7 @@ function ClassDetailPage() {
   const search = useSearch({ from: '/dashboard/student-bills' })
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
+  const generateModalState = useOverlayState()
 
   const { data: selectedClass, isLoading: classLoading } = useRefRombel(classId)
 
@@ -59,6 +61,7 @@ function ClassDetailPage() {
   const {
     data: classBillsData,
     isLoading: classBillsLoading,
+    refetch: refetchBills,
   } = useQuery({
     queryKey: ['bills', 'class', classId, search.tahun_ajaran_id, search.semester_id],
     queryFn: async () => {
@@ -79,6 +82,8 @@ function ClassDetailPage() {
   const students = studentsData?.data ?? []
   const meta = studentsData?.meta
   const classBills = classBillsData?.data ?? []
+  
+  const studentIds = useMemo(() => students.map(s => s.student_id), [students])
 
   const studentSummaryMap = useMemo(() => {
     const map = new Map<string, StudentSummary>()
@@ -129,16 +134,37 @@ function ClassDetailPage() {
                 {selectedClass ? getRombelLabel(selectedClass) : (classLoading ? 'Memuat...' : '-')}
               </p>
             </div>
-            <Button
-              variant="secondary"
-              onPress={backToClasses}
-            >
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Kembali ke Daftar Kelas
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                className="bg-accent text-accent-foreground"
+                onPress={generateModalState.open}
+              >
+                <Calculator className="mr-2 w-4 h-4" />
+                Generate Tagihan
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={backToClasses}
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                Kembali ke Daftar Kelas
+              </Button>
+            </div>
           </div>
         </Card.Header>
       </Card>
+
+      {selectedClass && (
+        <GenerateBillModal
+          state={generateModalState}
+          selectedClass={selectedClass}
+          studentIds={studentIds}
+          onSuccess={() => {
+            refetchBills()
+          }}
+        />
+      )}
 
       <Card className={surfaceCardClass}>
         <Card.Content className="relative min-h-[300px]">

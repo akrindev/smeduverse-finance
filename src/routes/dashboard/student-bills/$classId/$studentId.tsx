@@ -145,13 +145,23 @@ function StudentDetailPage() {
               </p>
               <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
             </div>
-            <Button
-              variant="secondary"
-              onPress={backToStudents}
-            >
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Kembali ke Daftar Siswa
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="primary"
+                className="bg-accent text-accent-foreground"
+                onPress={paymentModalState.open}
+              >
+                <Wallet className="mr-2 w-4 h-4" />
+                Input Pembayaran
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={backToStudents}
+              >
+                <ArrowLeft className="mr-2 w-4 h-4" />
+                Kembali ke Daftar Siswa
+              </Button>
+            </div>
           </div>
         </Card.Header>
       </Card>
@@ -367,10 +377,16 @@ function StudentDetailPage() {
         onPay={openPaymentModalForBill}
       />
 
-      <PaymentModal state={paymentModalState} bill={billToPay} onSuccess={() => {
-        setBillToPay(null)
-        queryClient.invalidateQueries({ queryKey: ['bills'] })
-      }} />
+      <PaymentModal
+        state={paymentModalState}
+        bill={billToPay}
+        studentId={studentId}
+        studentName={selectedStudent?.fullname}
+        onSuccess={() => {
+          setBillToPay(null)
+          queryClient.invalidateQueries({ queryKey: ['bills'] })
+        }}
+      />
     </div>
   )
 }
