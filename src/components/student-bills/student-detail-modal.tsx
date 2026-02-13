@@ -1,9 +1,10 @@
 import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@heroui/react'
-import { X, User, GraduationCap, Calendar, Info, BadgePercent } from 'lucide-react'
+import { X, User, GraduationCap, Calendar, Info, BadgePercent, Wallet } from 'lucide-react'
 import type { Student } from '@/types/finance'
 import { tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { getRombelLabel } from '@/lib/tagihan-siswa'
 import { useStudentScholarships } from '@/hooks/use-scholarships'
+import { usePayments } from '@/hooks/use-payments'
 import { formatCurrency } from '@/lib/format'
 
 interface StudentDetailModalProps {
@@ -17,10 +18,15 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
     { enabled: state.isOpen && !!student?.student_id }
   )
 
+  const { data: paymentsData, isLoading: paymentsLoading } = usePayments(
+    state.isOpen && student?.student_id ? { student_id: student.student_id, per_page: 50 } : undefined
+  )
+
   if (!student) return null
 
   const rombelHistory = student.rombongan_belajar ?? []
   const assignedScholarships = scholarshipsData?.data ?? []
+  const paymentHistory = paymentsData?.data ?? []
 
   return (
     <Modal state={state}>
@@ -30,7 +36,7 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
             <Modal.Header>
               <div className="flex-1">
                 <Modal.Heading>Detail Siswa</Modal.Heading>
-                <p className="text-xs text-default-500 mt-1">Informasi lengkap, riwayat rombel, dan beasiswa</p>
+                <p className="text-xs text-default-500 mt-1">Informasi lengkap, beasiswa, pembayaran, dan rombel</p>
               </div>
               <Modal.CloseTrigger />
             </Modal.Header>
@@ -124,6 +130,72 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
                                     color={as.is_active ? 'success' : 'default'}
                                   >
                                     {as.is_active ? 'Aktif' : 'Non-aktif'}
+                                  </Chip>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-accent" />
+                  <h3 className="font-semibold">Riwayat Pembayaran</h3>
+                </div>
+
+                {paymentsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Spinner size="sm" />
+                  </div>
+                ) : (
+                  <div className="border border-border/50 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-surface/50">
+                            <th className={tableHeadCellClass}>No. Bayar</th>
+                            <th className={tableHeadCellClass}>Tanggal</th>
+                            <th className={tableHeadCellClass}>Total</th>
+                            <th className={tableHeadCellClass}>Metode</th>
+                            <th className={tableHeadCellClass}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {paymentHistory.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="p-8 text-center text-default-500">
+                                Belum ada riwayat pembayaran.
+                              </td>
+                            </tr>
+                          ) : (
+                            paymentHistory.map((p) => (
+                              <tr key={p.id} className="hover:bg-surface/30 transition-colors">
+                                <td className={tableBodyCellClass}>
+                                  <p className="font-mono text-xs">{p.payment_number}</p>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  {p.payment_date}
+                                </td>
+                                <td className={`${tableBodyCellClass} font-semibold`}>
+                                  {formatCurrency(p.total_amount)}
+                                </td>
+                                <td className={`${tableBodyCellClass} capitalize`}>
+                                  {p.payment_method}
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  <Chip
+                                    size="sm"
+                                    variant="soft"
+                                    color={p.status === 'confirmed' ? 'success' : 'danger'}
+                                  >
+                                    {p.status === 'confirmed' ? 'Lunas' : 'Void'}
                                   </Chip>
                                 </td>
                               </tr>
