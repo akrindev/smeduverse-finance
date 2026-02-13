@@ -1,6 +1,7 @@
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
+import { StudentDetailModal } from '@/components/student-bills/student-detail-modal'
 import { useRefRombels, useRefStudents } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import {
@@ -13,7 +14,7 @@ import { getRombelLabel, sortRombelsByJenjang } from '@/lib/tagihan-siswa'
 import type { Rombel, Student } from '@/types/finance'
 import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
-import { Calculator, UserRound, Users } from 'lucide-react'
+import { Calculator, Eye, UserRound, Users } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/dashboard/student-bills/')({
@@ -29,7 +30,9 @@ function ClassListPage() {
   const normalizedSearch = search.search?.trim() ?? ''
 
   const generateModalState = useOverlayState()
+  const detailModalState = useOverlayState()
   const [targetClass, setTargetClass] = useState<Rombel | null>(null)
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<Student | null>(null)
 
   const {
     data: rombelsData,
@@ -44,6 +47,7 @@ function ClassListPage() {
       page: pagination.pageIndex + 1,
       search: isStudentMode ? undefined : search.search,
       tahun_ajaran_id: search.tahun_ajaran_id,
+      semester_id: search.semester_id,
     },
     { enabled: !isStudentMode },
   )
@@ -58,8 +62,9 @@ function ClassListPage() {
     isStudentMode
       ? {
           search: normalizedSearch || undefined,
-          active: true,
           page: 1,
+          tahun_ajaran_id: search.tahun_ajaran_id,
+          semester_id: search.semester_id,
           // per_page: 500,
         }
       : undefined,
@@ -68,7 +73,7 @@ function ClassListPage() {
 
   useEffect(() => {
     setPagination((previous) => ({ ...previous, pageIndex: 0 }))
-  }, [search.search, search.tahun_ajaran_id, search.search_by])
+  }, [search.search, search.tahun_ajaran_id, search.semester_id, search.search_by])
 
   const sortedRombels = useMemo(
     () => sortRombelsByJenjang(rombelsData?.data ?? []),
@@ -142,6 +147,11 @@ function ClassListPage() {
   function openGenerateModal(rombel: Rombel): void {
     setTargetClass(rombel)
     generateModalState.open()
+  }
+
+  function openDetailModal(student: Student): void {
+    setSelectedStudentForDetail(student)
+    detailModalState.open()
   }
 
   function pickStudentClass(student: Student): Rombel | null {
@@ -228,14 +238,35 @@ function ClassListPage() {
                         <td className={tableBodyCellClass}>{activeClassLabel}</td>
                         <td className={tableBodyCellClass}>{activeClass?.tingkat_kelas ?? '-'}</td>
                         <td className={`${tableBodyCellClass} text-right`}>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            isDisabled={!hasClass}
-                            onPress={() => selectStudent(student)}
-                          >
-                            Pilih
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              isIconOnly
+                              onPress={() => openDetailModal(student)}
+                              aria-label="Lihat detail siswa"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              isIconOnly
+                              isDisabled={!hasClass}
+                              onPress={() => selectStudent(student)}
+                            >
+                              Pilih
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              isDisabled={!hasClass}
+                              onPress={() => selectStudent(student)}
+                            >
+                              Pilih
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     )
@@ -354,6 +385,11 @@ function ClassListPage() {
           }}
         />
       )}
+
+      <StudentDetailModal
+        student={selectedStudentForDetail}
+        state={detailModalState}
+      />
     </div>
   )
 }

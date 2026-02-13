@@ -17,9 +17,10 @@ import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, User as UserIcon, Calculator } from 'lucide-react'
+import { ArrowLeft, User as UserIcon, Calculator, Eye } from 'lucide-react'
 import { useMemo, useState, useEffect } from 'react'
 import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
+import { StudentDetailModal } from '@/components/student-bills/student-detail-modal'
 
 interface StudentSummary {
   totalBills: number
@@ -42,6 +43,8 @@ function ClassDetailPage() {
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const generateModalState = useOverlayState()
+  const detailModalState = useOverlayState()
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<Student | null>(null)
 
   const { data: selectedClass, isLoading: classLoading } = useRefRombel(classId)
 
@@ -115,6 +118,11 @@ function ClassDetailPage() {
       to: '/dashboard/student-bills/$classId/$studentId',
       params: { classId, studentId: student.student_id },
     })
+  }
+
+  function openDetailModal(student: Student): void {
+    setSelectedStudentForDetail(student)
+    detailModalState.open()
   }
 
   function backToClasses(): void {
@@ -222,13 +230,24 @@ function ClassDetailPage() {
                             {formatCurrency(studentSummary.totalOutstanding)}
                           </td>
                           <td className={tableBodyCellClass}>
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onPress={() => selectStudent(student)}
-                            >
-                              Pilih
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                isIconOnly
+                                onPress={() => openDetailModal(student)}
+                                aria-label="Lihat detail siswa"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onPress={() => selectStudent(student)}
+                              >
+                                Pilih
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       )
@@ -252,6 +271,11 @@ function ClassDetailPage() {
           )}
         </Card.Content>
       </Card>
+
+      <StudentDetailModal
+        student={selectedStudentForDetail}
+        state={detailModalState}
+      />
     </div>
   )
 }

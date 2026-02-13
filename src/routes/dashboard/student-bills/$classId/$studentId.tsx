@@ -3,20 +3,23 @@ import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { BillDetailModal } from '@/components/student-bills/bill-detail-modal'
 import { PaymentModal } from '@/components/student-bills/payment-modal'
-import { useStudentBills } from '@/hooks/use-bills'
+import { StudentDetailModal } from '@/components/student-bills/student-detail-modal'
+import { useStudentBills, useRecalculateBills } from '@/hooks/use-bills'
 import { usePayments } from '@/hooks/use-payments'
+import { useStudentScholarships } from '@/hooks/use-scholarships'
 import { useRefStudent } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
-import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState, toast } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
 const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'danger' }> = {
   confirmed: { label: 'Terkonfirmasi', color: 'success' },
@@ -38,9 +41,40 @@ function StudentDetailPage() {
   const [otherPagination, setOtherPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const [paymentPagination, setPaymentPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
+  const studentDetailModalState = useOverlayState()
+  const assignScholarshipModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
+
+  const { data: scholarshipsData } = useStudentScholarships(studentId, {
+    semester_id: search.semester_id,
+    tahun_ajaran_id: search.tahun_ajaran_id,
+    is_active: true,
+  })
+
+  const { mutate: recalculate, isPending: recalculating } = useRecalculateBills()
+
+  const handleRecalculate = () => {
+    const activeScholarship = scholarshipsData?.data?.[0]
+
+    recalculate(
+      {
+        student_ids: [studentId],
+        tahun_ajaran_id: search.tahun_ajaran_id,
+        semester_id: search.semester_id,
+        finance_student_scholarship_id: activeScholarship?.id,
+      },
+      {
+        onSuccess: (data) => {
+          const processed = data.processed_count ?? 0
+          const updated = data.updated_count ?? 0
+          toast.success(`Berhasil memproses ${processed} tagihan. ${updated} tagihan diperbarui.`)
+          queryClient.invalidateQueries({ queryKey: ['bills', 'student', studentId] })
+        },
+      }
+    )
+  }
 
   const billParams = useMemo(() => ({
     per_page: 500,
@@ -157,14 +191,45 @@ function StudentDetailPage() {
       <Card className={surfaceCardClass}>
         <Card.Header className={cardHeaderClass}>
           <div className="flex flex-wrap justify-between items-center gap-2 w-full">
-            <div>
-              <p className="text-default-500 text-sm">Siswa Terpilih</p>
-              <p data-testid="selected-student-name" className="font-semibold text-lg">
-                {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
-              </p>
-              <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="text-default-500 text-sm">Siswa Terpilih</p>
+                <div className="flex items-center gap-2">
+                  <p data-testid="selected-student-name" className="font-semibold text-lg">
+                    {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
+                  </p>
+                  {selectedStudent && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      className="w-6 h-6 rounded-full"
+                      onPress={studentDetailModalState.open}
+                      aria-label="Lihat detail profil siswa"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                isDisabled={recalculating}
+                onPress={handleRecalculate}
+              >
+                <RotateCw className={`w-4 h-4 mr-2 ${recalculating ? 'animate-spin' : ''}`} />
+                Kalkulasi Ulang
+              </Button>
+              <Button
+                variant="secondary"
+                onPress={assignScholarshipModalState.open}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Assign Beasiswa
+              </Button>
               <Button
                 variant="primary"
                 className="bg-accent text-accent-foreground"
@@ -474,6 +539,19 @@ function StudentDetailPage() {
         studentName={selectedStudent?.fullname}
         onSuccess={() => {
           setBillToPay(null)
+          queryClient.invalidateQueries({ queryKey: ['bills'] })
+        }}
+      />
+
+      <StudentDetailModal
+        student={selectedStudent ?? null}
+        state={studentDetailModalState}
+      />
+
+      <AssignScholarshipModal 
+        state={assignScholarshipModalState}
+        initialStudentId={studentId}
+        onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['bills'] })
         }}
       />

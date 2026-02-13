@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { BadgePercent, CalendarDays, GraduationCap, Plus, Users, Edit2 } from 'lucide-react'
+import { BadgePercent, CalendarDays, GraduationCap, Plus, Users, Edit2, UserPlus } from 'lucide-react'
 import { Button, Card, Chip, Input, Spinner, TextField, Modal, Form, Label, ListBox, Select, Switch, useOverlayState, FieldError } from '@heroui/react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
@@ -17,6 +17,7 @@ import {
   pageShellClass,
   surfaceCardClass,
 } from '@/lib/page-styles'
+import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
 export const Route = createFileRoute('/dashboard/beasiswa')({
   component: BeasiswaPage,
@@ -35,6 +36,7 @@ function BeasiswaPage() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
   const modalState = useOverlayState()
+  const assignModalState = useOverlayState()
   const [editingScholarship, setEditingScholarship] = useState<Scholarship | null>(null)
 
   const { data, isLoading, isPlaceholderData, isFetching, error } = useScholarships({
@@ -104,10 +106,16 @@ function BeasiswaPage() {
   return (
     <div className={pageShellClass}>
       <PageHeader title="Manajemen Beasiswa" description="Program beasiswa berbasis data API Finance.">
-        <Button variant="primary" className="bg-accent text-accent-foreground" onPress={handleAdd}>
-          <Plus className="w-4 h-4 mr-2" />
-          Tambah Program
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onPress={() => assignModalState.open()}>
+            <UserPlus className="w-4 h-4 mr-2" />
+            Assign ke Siswa
+          </Button>
+          <Button variant="primary" className="bg-accent text-accent-foreground" onPress={handleAdd}>
+            <Plus className="w-4 h-4 mr-2" />
+            Tambah Program
+          </Button>
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -339,6 +347,10 @@ function BeasiswaPage() {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
+
+      <AssignScholarshipModal 
+        state={assignModalState}
+      />
     </div>
   )
 }

@@ -21,6 +21,8 @@ const SCHOLARSHIP_KEYS = {
   all: ['scholarships'] as const,
   list: (params?: Record<string, unknown>) => [...SCHOLARSHIP_KEYS.all, 'list', params] as const,
   detail: (id: number) => [...SCHOLARSHIP_KEYS.all, 'detail', id] as const,
+  student: (studentId: string, params?: Record<string, unknown>) =>
+    [...SCHOLARSHIP_KEYS.all, 'student', studentId, params] as const,
 }
 
 export function useScholarships(params?: Record<string, unknown>) {
@@ -32,6 +34,20 @@ export function useScholarships(params?: Record<string, unknown>) {
       >('/scholarships', params)
       return unwrapPaginated(response)
     },
+    placeholderData: (previousData) => previousData,
+  })
+}
+
+export function useStudentScholarships(studentId: string, params?: Record<string, unknown>) {
+  return useQuery({
+    queryKey: SCHOLARSHIP_KEYS.student(studentId, params),
+    queryFn: async () => {
+      const response = await apiGet<
+        PaginatedResponse<StudentScholarship> | { data: PaginatedResponse<StudentScholarship> }
+      >(`/students/${studentId}/scholarships`, params)
+      return unwrapPaginated(response)
+    },
+    enabled: !!studentId,
     placeholderData: (previousData) => previousData,
   })
 }
@@ -88,6 +104,11 @@ export function useAssignScholarship() {
         '/scholarships/assign',
         data,
       ).then(unwrapResource),
-    onSuccess: () => qc.invalidateQueries({ queryKey: SCHOLARSHIP_KEYS.all }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: SCHOLARSHIP_KEYS.all })
+      if (variables.student_id) {
+        qc.invalidateQueries({ queryKey: SCHOLARSHIP_KEYS.student(variables.student_id) })
+      }
+    },
   })
 }

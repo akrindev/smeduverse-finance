@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import { toast } from '@heroui/react'
 import type { ApiError, ApiValidationError, PaginatedResponse } from '@/types/finance'
 
 // ── Token Management ────────────────────────────────────────
@@ -137,11 +138,19 @@ api.interceptors.response.use(
       }
 
       const message = data?.message || `Request failed with status ${status}`
-      const errors = data && 'errors' in data ? data.errors : undefined
+      const errors = data && 'errors' in data ? (data as ApiValidationError).errors : undefined
+
+      if (status !== 401) {
+        const description = errors ? Object.values(errors).flat().join('. ') : undefined
+        toast.danger(message, { description })
+      }
+
       throw new ApiResponseError(status, message, errors)
     }
 
-    throw new ApiResponseError(0, error.message || 'Network error')
+    const networkError = error.message || 'Network error'
+    toast.danger(networkError)
+    throw new ApiResponseError(0, networkError)
   },
 )
 

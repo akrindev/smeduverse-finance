@@ -34,7 +34,7 @@ function StudentBillsLayout() {
   const generateModalState = useOverlayState()
 
   const { data: years } = useRefTahunAjarans()
-  const { data: semesters } = useRefSemesters()
+  const { data: semesters } = useRefSemesters({ tahun_ajaran_id: search.tahun_ajaran_id })
 
   useEffect(() => {
     setLocalSearch(search.search || '')
@@ -44,6 +44,11 @@ function StudentBillsLayout() {
     navigate({
       search: (prev: StudentBillsSearch) => {
         const next = { ...prev, ...updates }
+        
+        if (updates.tahun_ajaran_id !== undefined && updates.tahun_ajaran_id !== prev.tahun_ajaran_id) {
+          delete next.semester_id
+        }
+
         Object.keys(next).forEach((key) => {
           if (next[key as keyof StudentBillsSearch] === undefined) {
             delete next[key as keyof StudentBillsSearch]
@@ -68,21 +73,7 @@ function StudentBillsLayout() {
       </PageHeader>
       
       <div className="gap-4 grid grid-cols-1 md:grid-cols-5 mb-6">
-        <TextField className="md:col-span-3">
-          <Label>Cari</Label>
-          <div className="relative">
-            <Search className="top-1/2 left-3 z-10 absolute w-4 h-4 text-default-500 -translate-y-1/2" />
-            <Input
-              placeholder={searchPlaceholder}
-              className="pl-10"
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && updateSearch({ search: localSearch || undefined })}
-              onBlur={() => updateSearch({ search: localSearch || undefined })}
-            />
-          </div>
-        </TextField>
-
+        
         <Select
           aria-label="Cari Berdasarkan"
           value={searchBy}
@@ -103,6 +94,21 @@ function StudentBillsLayout() {
             </ListBox>
           </Select.Popover>
         </Select>
+
+        <TextField>
+          <Label>Cari</Label>
+          <div className="relative">
+            <Search className="top-1/2 left-3 z-10 absolute w-4 h-4 text-default-500 -translate-y-1/2" />
+            <Input
+              placeholder={searchPlaceholder}
+              className="pl-10"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && updateSearch({ search: localSearch || undefined })}
+              onBlur={() => updateSearch({ search: localSearch || undefined })}
+            />
+          </div>
+        </TextField>
 
         <Select
           aria-label="Tahun Ajaran"
@@ -127,7 +133,7 @@ function StudentBillsLayout() {
           </Select.Popover>
         </Select>
 
-        <Select
+        {/* <Select
           aria-label="Semester"
           placeholder="Semua Semester"
           value={search.semester_id?.toString() || ''}
@@ -148,7 +154,7 @@ function StudentBillsLayout() {
               ))}
             </ListBox>
           </Select.Popover>
-        </Select>
+        </Select> */}
       </div>
 
       <Outlet />
