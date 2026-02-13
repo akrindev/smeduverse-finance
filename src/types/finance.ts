@@ -75,6 +75,7 @@ export interface Student {
   nisn: string | null
   jenis_kelamin?: string | null
   rombel_aktif?: Rombel[]
+  rombongan_belajar?: Rombel[]
 }
 
 export interface Rombel {
@@ -99,6 +100,11 @@ export interface Rombel {
   pivot?: {
     student_id?: string
     rombongan_belajar_id?: string
+    status?: number | string
+    tanggal_masuk?: string | null
+    tanggal_keluar?: string | null
+    keterangan_masuk?: string | null
+    keterangan_keluar?: string | null
   } | null
   jurusan?: {
     id?: number
@@ -138,6 +144,8 @@ export interface RefStudentsFilters {
   active?: boolean
   jenis_kelamin?: string
   rombongan_belajar_id?: string
+  tahun_ajaran_id?: number
+  semester_id?: number
   page?: number
   per_page?: number
 }
@@ -146,6 +154,7 @@ export interface RefRombelsFilters {
   search?: string
   jurusan_id?: number
   tahun_ajaran_id?: number
+  semester_id?: number
   tingkat_kelas?: number
   active_only?: boolean
   page?: number

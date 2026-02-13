@@ -3,6 +3,7 @@ import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { BillDetailModal } from '@/components/student-bills/bill-detail-modal'
 import { PaymentModal } from '@/components/student-bills/payment-modal'
+import { StudentDetailModal } from '@/components/student-bills/student-detail-modal'
 import { useStudentBills } from '@/hooks/use-bills'
 import { usePayments } from '@/hooks/use-payments'
 import { useRefStudent } from '@/hooks/use-references'
@@ -15,7 +16,7 @@ import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'danger' }> = {
@@ -38,6 +39,7 @@ function StudentDetailPage() {
   const [otherPagination, setOtherPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const [paymentPagination, setPaymentPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
+  const studentDetailModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
@@ -157,12 +159,28 @@ function StudentDetailPage() {
       <Card className={surfaceCardClass}>
         <Card.Header className={cardHeaderClass}>
           <div className="flex flex-wrap justify-between items-center gap-2 w-full">
-            <div>
-              <p className="text-default-500 text-sm">Siswa Terpilih</p>
-              <p data-testid="selected-student-name" className="font-semibold text-lg">
-                {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
-              </p>
-              <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
+            <div className="flex items-center gap-4">
+              <div>
+                <p className="text-default-500 text-sm">Siswa Terpilih</p>
+                <div className="flex items-center gap-2">
+                  <p data-testid="selected-student-name" className="font-semibold text-lg">
+                    {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
+                  </p>
+                  {selectedStudent && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      className="w-6 h-6 rounded-full"
+                      onPress={studentDetailModalState.open}
+                      aria-label="Lihat detail profil siswa"
+                    >
+                      <Info className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <Button
@@ -476,6 +494,11 @@ function StudentDetailPage() {
           setBillToPay(null)
           queryClient.invalidateQueries({ queryKey: ['bills'] })
         }}
+      />
+
+      <StudentDetailModal
+        student={selectedStudent ?? null}
+        state={studentDetailModalState}
       />
     </div>
   )
