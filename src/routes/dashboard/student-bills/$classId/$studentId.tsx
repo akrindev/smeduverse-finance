@@ -16,8 +16,9 @@ import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
 const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'danger' }> = {
   confirmed: { label: 'Terkonfirmasi', color: 'success' },
@@ -40,6 +41,7 @@ function StudentDetailPage() {
   const [paymentPagination, setPaymentPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
   const studentDetailModalState = useOverlayState()
+  const assignScholarshipModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
@@ -183,6 +185,13 @@ function StudentDetailPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                onPress={assignScholarshipModalState.open}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Assign Beasiswa
+              </Button>
               <Button
                 variant="primary"
                 className="bg-accent text-accent-foreground"
@@ -499,6 +508,14 @@ function StudentDetailPage() {
       <StudentDetailModal
         student={selectedStudent ?? null}
         state={studentDetailModalState}
+      />
+
+      <AssignScholarshipModal 
+        state={assignScholarshipModalState}
+        initialStudentId={studentId}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['bills'] })
+        }}
       />
     </div>
   )
