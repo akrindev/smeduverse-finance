@@ -1,8 +1,9 @@
 import { Button, Form, Input, Label, ListBox, Modal, Select, Spinner, TextField, useOverlayState, FieldError } from '@heroui/react'
 import { useScholarships, useAssignScholarship } from '@/hooks/use-scholarships'
 import { useRefTahunAjarans, useRefSemesters } from '@/hooks/use-references'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { StudentSearchSelect } from '@/components/shared/student-search-select'
+import type { Key } from 'react-aria-components'
 
 interface AssignScholarshipModalProps {
   state: ReturnType<typeof useOverlayState>
@@ -12,24 +13,30 @@ interface AssignScholarshipModalProps {
 
 export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: AssignScholarshipModalProps) {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>(initialStudentId ? [initialStudentId] : [])
-  const [selectedTahunId, setSelectedTahunId] = useState<number | null>(null)
+  const [selectedScholarshipId, setSelectedScholarshipId] = useState<Key | null>(null)
+  const [selectedTahunId, setSelectedTahunId] = useState<Key | null>(null)
+  const [selectedSemesterId, setSelectedSemesterId] = useState<Key | null>(null)
 
-  const { data: scholarshipsData } = useScholarships({ is_active: true, per_page: 100 })
+  const { data: scholarshipsData, isLoading: isScholarshipsLoading } = useScholarships({ per_page: 100 })
   const scholarships = scholarshipsData?.data ?? []
 
-  const { data: years } = useRefTahunAjarans()
-  const { data: semesters } = useRefSemesters({ tahun_ajaran_id: selectedTahunId ?? undefined }, { enabled: !!selectedTahunId })
+  const { data: years, isLoading: isYearsLoading } = useRefTahunAjarans()
+  const { data: semesters, isLoading: isSemestersLoading } = useRefSemesters(
+    { tahun_ajaran_id: selectedTahunId ? Number(selectedTahunId) : undefined },
+    { enabled: !!selectedTahunId }
+  )
 
   const assignMutation = useAssignScholarship()
 
+  useEffect(() => {
+    setSelectedSemesterId(null)
+  }, [selectedTahunId])
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (selectedStudentIds.length === 0) return
+    if (selectedStudentIds.length === 0 || !selectedScholarshipId || !selectedTahunId || !selectedSemesterId) return
 
     const formData = new FormData(e.currentTarget)
-    const scholarshipId = Number(formData.get('finance_scholarship_id'))
-    const semesterId = Number(formData.get('semester_id'))
-    const tahunId = Number(formData.get('tahun_ajaran_id'))
     const startDate = formData.get('start_date') as string || null
     const endDate = formData.get('end_date') as string || null
 
@@ -37,9 +44,9 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
       for (const studentId of selectedStudentIds) {
         await assignMutation.mutateAsync({
           student_id: studentId,
-          finance_scholarship_id: scholarshipId,
-          semester_id: semesterId,
-          tahun_ajaran_id: tahunId,
+          finance_scholarship_id: Number(selectedScholarshipId),
+          semester_id: Number(selectedSemesterId),
+          tahun_ajaran_id: Number(selectedTahunId),
           start_date: startDate,
           end_date: endDate,
           is_active: true,
@@ -48,6 +55,10 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
 
       state.close()
       onSuccess?.()
+      setSelectedScholarshipId(null)
+      setSelectedTahunId(null)
+      setSelectedSemesterId(null)
+      if (!initialStudentId) setSelectedStudentIds([])
     } catch (err) {
       console.error(err)
     }
@@ -79,7 +90,13 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                   </div>
                 )}
 
-                <Select isRequired name="finance_scholarship_id">
+                <Select
+                  isRequired
+                  name="finance_scholarship_id"
+                  value={selectedScholarshipId}
+                  onChange={setSelectedScholarshipId}
+                  placeholder={isScholarshipsLoading ? 'Memuat beasiswa...' : 'Pilih program beasiswa'}
+                >
                   <Label>Program Beasiswa</Label>
                   <Select.Trigger>
                     <Select.Value />
@@ -93,6 +110,7 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                             <span className="font-medium">{s.name}</span>
                             <span className="text-[10px] text-default-500">{s.code}</span>
                           </div>
+                          <ListBox.ItemIndicator />
                         </ListBox.Item>
                       ))}
                     </ListBox>
@@ -101,10 +119,12 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                 </Select>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Select 
-                    isRequired 
+                  <Select
+                    isRequired
                     name="tahun_ajaran_id"
-                    onChange={(val) => setSelectedTahunId(val ? Number(val) : null)}
+                    value={selectedTahunId}
+                    onChange={setSelectedTahunId}
+                    placeholder={isYearsLoading ? 'Memuat...' : 'Pilih tahun'}
                   >
                     <Label>Tahun Ajaran</Label>
                     <Select.Trigger>
@@ -116,6 +136,7 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                         {(years?.data ?? []).map((y) => (
                           <ListBox.Item key={y.id} id={y.id.toString()} textValue={y.nama || y.name || ''}>
                             {y.nama || y.name}
+                            <ListBox.ItemIndicator />
                           </ListBox.Item>
                         ))}
                       </ListBox>
@@ -123,7 +144,14 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                     <FieldError />
                   </Select>
 
-                  <Select isRequired name="semester_id" isDisabled={!selectedTahunId}>
+                  <Select
+                    isRequired
+                    name="semester_id"
+                    value={selectedSemesterId}
+                    onChange={setSelectedSemesterId}
+                    isDisabled={!selectedTahunId || isSemestersLoading}
+                    placeholder={isSemestersLoading ? 'Memuat...' : 'Pilih semester'}
+                  >
                     <Label>Semester</Label>
                     <Select.Trigger>
                       <Select.Value />
@@ -134,6 +162,7 @@ export function AssignScholarshipModal({ state, onSuccess, initialStudentId }: A
                         {(semesters?.data ?? []).map((s) => (
                           <ListBox.Item key={s.id} id={s.id.toString()} textValue={s.nama || s.name || ''}>
                             {s.nama || s.name}
+                            <ListBox.ItemIndicator />
                           </ListBox.Item>
                         ))}
                       </ListBox>
