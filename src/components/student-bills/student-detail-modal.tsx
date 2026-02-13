@@ -1,8 +1,10 @@
-import { Button, Chip, Modal, Separator, useOverlayState } from '@heroui/react'
-import { X, User, GraduationCap, Calendar, Info } from 'lucide-react'
+import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@heroui/react'
+import { X, User, GraduationCap, Calendar, Info, BadgePercent } from 'lucide-react'
 import type { Student } from '@/types/finance'
 import { tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { getRombelLabel } from '@/lib/tagihan-siswa'
+import { useStudentScholarships } from '@/hooks/use-scholarships'
+import { formatCurrency } from '@/lib/format'
 
 interface StudentDetailModalProps {
   student: Student | null
@@ -10,9 +12,15 @@ interface StudentDetailModalProps {
 }
 
 export function StudentDetailModal({ student, state }: StudentDetailModalProps) {
+  const { data: scholarshipsData, isLoading: scholarshipsLoading } = useStudentScholarships(
+    student?.student_id || '',
+    { enabled: state.isOpen && !!student?.student_id }
+  )
+
   if (!student) return null
 
   const rombelHistory = student.rombongan_belajar ?? []
+  const assignedScholarships = scholarshipsData?.data ?? []
 
   return (
     <Modal state={state}>
@@ -22,7 +30,7 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
             <Modal.Header>
               <div className="flex-1">
                 <Modal.Heading>Detail Siswa</Modal.Heading>
-                <p className="text-xs text-default-500 mt-1">Informasi lengkap dan riwayat rombel</p>
+                <p className="text-xs text-default-500 mt-1">Informasi lengkap, riwayat rombel, dan beasiswa</p>
               </div>
               <Modal.CloseTrigger />
             </Modal.Header>
@@ -53,6 +61,79 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <BadgePercent className="w-5 h-5 text-accent" />
+                  <h3 className="font-semibold">Riwayat Beasiswa</h3>
+                </div>
+
+                {scholarshipsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Spinner size="sm" />
+                  </div>
+                ) : (
+                  <div className="border border-border/50 rounded-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-surface/50">
+                            <th className={tableHeadCellClass}>Program</th>
+                            <th className={tableHeadCellClass}>Potongan</th>
+                            <th className={tableHeadCellClass}>Semester/Tahun</th>
+                            <th className={tableHeadCellClass}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {assignedScholarships.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="p-8 text-center text-default-500">
+                                Belum ada beasiswa yang diberikan.
+                              </td>
+                            </tr>
+                          ) : (
+                            assignedScholarships.map((as) => (
+                              <tr key={as.id} className="hover:bg-surface/30 transition-colors">
+                                <td className={tableBodyCellClass}>
+                                  <p className="font-semibold">{as.scholarship?.name}</p>
+                                  <p className="text-[10px] text-default-500 font-mono">{as.scholarship?.code}</p>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  <p className="font-medium text-success">
+                                    {as.scholarship?.discount_type === 'percent'
+                                      ? `${as.scholarship.discount_value}%`
+                                      : formatCurrency(as.scholarship?.discount_value || 0)}
+                                  </p>
+                                  <p className="text-[10px] text-default-500">
+                                    {as.scholarship?.fee_type?.name || 'Semua biaya'}
+                                  </p>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  <p>{as.semester?.nama || as.semester?.name || '-'}</p>
+                                  <p className="text-[10px] text-default-500">
+                                    {as.tahun_ajaran?.nama || as.tahun_ajaran?.name || '-'}
+                                  </p>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  <Chip
+                                    size="sm"
+                                    variant="soft"
+                                    color={as.is_active ? 'success' : 'default'}
+                                  >
+                                    {as.is_active ? 'Aktif' : 'Non-aktif'}
+                                  </Chip>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator />

@@ -254,6 +254,8 @@ export interface StudentScholarship {
   notes: string | null
   scholarship: Scholarship | null
   student: Student | null
+  semester?: Semester | null
+  tahun_ajaran?: TahunAjaran | null
   created_at: string
   updated_at: string
 }
