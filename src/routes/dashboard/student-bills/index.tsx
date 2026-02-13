@@ -14,7 +14,7 @@ import { getRombelLabel, sortRombelsByJenjang } from '@/lib/tagihan-siswa'
 import type { Rombel, Student } from '@/types/finance'
 import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
-import { Calculator, UserRound, Users, Eye } from 'lucide-react'
+import { Calculator, Eye, UserRound, Users } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 export const Route = createFileRoute('/dashboard/student-bills/')({
@@ -248,6 +248,16 @@ function ClassListPage() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              isIconOnly
+                              isDisabled={!hasClass}
+                              onPress={() => selectStudent(student)}
+                            >
+                              Pilih
+                            </Button>
+
                             <Button
                               size="sm"
                               variant="secondary"

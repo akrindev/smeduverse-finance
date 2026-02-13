@@ -11,11 +11,11 @@ import type {
   Bill,
   BillFilters,
   GenerateSppRequest,
-  GenerateSppResponse,
   GenerateFeeRequest,
-  GenerateFeeResponse,
   PaginatedResponse,
   SingleResponse,
+  RecalculateBillsRequest,
+  RecalculateBillsResponse,
 } from '@/types/finance'
 
 const BILL_KEYS = {
@@ -70,11 +70,12 @@ export function useGenerateSpp() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (data: GenerateSppRequest) => {
-      const response = await apiPost<
-        Omit<GenerateSppResponse, 'created_bills'> & {
-          created_bills: Bill[] | { data: Bill[] }
-        }
-      >('/bills/generate/spp', data)
+      const response = await apiPost<{
+        targeted: number
+        created_count: number
+        skipped_count: number
+        created_bills: Bill[] | { data: Bill[] }
+      }>('/bills/generate/spp', data)
 
       return {
         ...response,
@@ -89,11 +90,10 @@ export function useGenerateFee() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (data: GenerateFeeRequest) => {
-      const response = await apiPost<
-        Omit<GenerateFeeResponse, 'created_bills'> & {
-          created_bills: Bill[] | { data: Bill[] }
-        }
-      >('/bills/generate/fee', data)
+      const response = await apiPost<{
+        created_count: number
+        created_bills: Bill[] | { data: Bill[] }
+      }>('/bills/generate/fee', data)
 
       return {
         ...response,
@@ -109,6 +109,18 @@ export function useVoidBill() {
   return useMutation({
     mutationFn: (id: number) =>
       apiPatch<Bill | SingleResponse<Bill>>(`/bills/${id}/void`).then(unwrapResource),
+    onSuccess: () => qc.invalidateQueries({ queryKey: BILL_KEYS.all }),
+  })
+}
+
+export function useRecalculateBills() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: RecalculateBillsRequest) =>
+      apiPost<RecalculateBillsResponse | { data: RecalculateBillsResponse }>(
+        '/bills/recalculate',
+        data,
+      ).then(unwrapResource),
     onSuccess: () => qc.invalidateQueries({ queryKey: BILL_KEYS.all }),
   })
 }

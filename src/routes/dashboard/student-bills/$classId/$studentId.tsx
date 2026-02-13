@@ -4,19 +4,20 @@ import { LoadingState } from '@/components/shared/loading-state'
 import { BillDetailModal } from '@/components/student-bills/bill-detail-modal'
 import { PaymentModal } from '@/components/student-bills/payment-modal'
 import { StudentDetailModal } from '@/components/student-bills/student-detail-modal'
-import { useStudentBills } from '@/hooks/use-bills'
+import { useStudentBills, useRecalculateBills } from '@/hooks/use-bills'
 import { usePayments } from '@/hooks/use-payments'
+import { useStudentScholarships } from '@/hooks/use-scholarships'
 import { useRefStudent } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
-import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState, toast } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
@@ -45,6 +46,35 @@ function StudentDetailPage() {
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
+
+  const { data: scholarshipsData } = useStudentScholarships(studentId, {
+    semester_id: search.semester_id,
+    tahun_ajaran_id: search.tahun_ajaran_id,
+    is_active: true,
+  })
+
+  const { mutate: recalculate, isPending: recalculating } = useRecalculateBills()
+
+  const handleRecalculate = () => {
+    const activeScholarship = scholarshipsData?.data?.[0]
+
+    recalculate(
+      {
+        student_ids: [studentId],
+        tahun_ajaran_id: search.tahun_ajaran_id,
+        semester_id: search.semester_id,
+        finance_student_scholarship_id: activeScholarship?.id,
+      },
+      {
+        onSuccess: (data) => {
+          const processed = data.processed_count ?? 0
+          const updated = data.updated_count ?? 0
+          toast.success(`Berhasil memproses ${processed} tagihan. ${updated} tagihan diperbarui.`)
+          queryClient.invalidateQueries({ queryKey: ['bills', 'student', studentId] })
+        },
+      }
+    )
+  }
 
   const billParams = useMemo(() => ({
     per_page: 500,
@@ -185,6 +215,14 @@ function StudentDetailPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                isDisabled={recalculating}
+                onPress={handleRecalculate}
+              >
+                <RotateCw className={`w-4 h-4 mr-2 ${recalculating ? 'animate-spin' : ''}`} />
+                Kalkulasi Ulang
+              </Button>
               <Button
                 variant="secondary"
                 onPress={assignScholarshipModalState.open}

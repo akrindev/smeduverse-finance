@@ -350,19 +350,21 @@ export interface GenerateFeeRequest {
   period_year?: number
 }
 
-export interface GenerateSppResponse {
-  targeted: number
-  created_count: number
-  skipped_count: number
-  created_bills: Bill[]
+export interface RecalculateBillsRequest {
+  student_ids?: string[]
+  rombongan_belajar_id?: string
+  semester_id?: number
+  tahun_ajaran_id?: number
+  finance_student_scholarship_id?: number
 }
 
-export interface GenerateFeeResponse {
-  created_count: number
-  created_bills: Bill[]
+export interface RecalculateBillsResponse {
+  processed_count: number
+  updated_count: number
 }
 
 // ── Payments ────────────────────────────────────────────────
+
 
 export type PaymentStatus = 'confirmed' | 'void'
 export type PaymentMethod = 'cash' | 'transfer' | 'other'
