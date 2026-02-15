@@ -211,8 +211,7 @@ function PaymentsPage() {
                     </td>
                     <td className={tableBodyCellClass}>
                       <Link
-                        to="/dashboard/student-bills"
-                        search={{ student_id: payment.student_id }}
+                        to="/dashboard/class-bills"
                         className="flex w-8 h-8 items-center justify-center rounded-lg hover:bg-default/60 transition-colors text-default-foreground outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
                         aria-label="Lihat tagihan siswa"
                       >
@@ -259,4 +258,3 @@ function PaymentsPage() {
     </div>
   )
 }
-

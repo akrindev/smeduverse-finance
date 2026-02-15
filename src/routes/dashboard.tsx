@@ -32,7 +32,9 @@ function DashboardLayout() {
   const matches = useMatches()
   const { user, isAuthenticated, isLoading, logout } = useAuth()
 
-  const currentPath = matches[matches.length - 1]?.fullPath ?? '/dashboard'
+  const currentMatch = matches[matches.length - 1]
+  const currentPath = currentMatch?.fullPath ?? '/dashboard'
+  const currentSearch = currentMatch?.search as Record<string, any>
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -52,9 +54,31 @@ function DashboardLayout() {
           return currentPath === '/dashboard' || currentPath === '/dashboard/'
         }
 
-        return currentPath.startsWith(item.to)
+        const isPathMatch = currentPath.startsWith(item.to)
+        if (!isPathMatch) return false
+
+        if (item.to === '/dashboard') return true
+
+        if (item.search) {
+          return Object.entries(item.search).every(
+            ([key, value]) => currentSearch?.[key] === value,
+          )
+        }
+
+        // Check if there's a more specific match for this path
+        const hasSpecificMatch = navItems.some(
+          (other) =>
+            other !== item &&
+            other.to === item.to &&
+            other.search &&
+            Object.entries(other.search).every(
+              ([k, v]) => currentSearch?.[k] === v,
+            ),
+        )
+
+        return !hasSpecificMatch
       }),
-    [currentPath],
+    [currentPath, currentSearch],
   )
 
   const displayName = user?.teacher?.fullname ?? user?.username ?? 'Bendahara'
@@ -82,6 +106,7 @@ function DashboardLayout() {
             sidebarExpanded={sidebarExpanded}
             onToggleExpand={() => setSidebarExpanded(!sidebarExpanded)}
             currentPath={currentPath}
+            currentSearch={currentSearch}
           />
 
           <section className="flex-1 min-w-0">
@@ -104,7 +129,7 @@ function DashboardLayout() {
           </section>
         </div>
       </div>
-      <MobileBottomNav currentPath={currentPath} />
+      <MobileBottomNav currentPath={currentPath} currentSearch={currentSearch} />
     </div>
   )
 }

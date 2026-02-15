@@ -26,14 +26,15 @@ const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'd
   void: { label: 'Void', color: 'danger' },
 }
 
-export const Route = createFileRoute('/dashboard/student-bills/$classId/$studentId')({
+export const Route = createFileRoute('/dashboard/student-bills/$studentId')({
   component: StudentDetailPage,
 })
 
 function StudentDetailPage() {
-  const { classId, studentId } = Route.useParams()
+  const { studentId } = Route.useParams()
   const navigate = useNavigate()
   const search = useSearch({ from: '/dashboard/student-bills' })
+  const classId = search.classId
   const queryClient = useQueryClient()
 
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null)
@@ -168,11 +169,18 @@ function StudentDetailPage() {
   const canPaySelectedBill = Boolean(selectedBill && selectedBill.status !== 'void' && selectedBill.amount_outstanding > 0)
 
   function backToStudents(): void {
-    navigate({
-      to: '/dashboard/student-bills/$classId',
-      params: { classId },
-      replace: true,
-    })
+    if (classId) {
+      navigate({
+        to: '/dashboard/class-bills/$classId',
+        params: { classId },
+        replace: true,
+      })
+    } else {
+      navigate({
+        to: '/dashboard/class-bills',
+        replace: true,
+      })
+    }
   }
 
   function openBillDetail(bill: Bill): void {
@@ -586,4 +594,3 @@ function SummaryCard({
     </Card>
   )
 }
-

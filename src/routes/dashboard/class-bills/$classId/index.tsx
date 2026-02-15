@@ -27,7 +27,7 @@ interface StudentSummary {
   totalOutstanding: number
 }
 
-export const Route = createFileRoute('/dashboard/student-bills/$classId/')({
+export const Route = createFileRoute('/dashboard/class-bills/$classId/')({
   component: ClassDetailPage,
 })
 
@@ -39,7 +39,7 @@ const genderLabels: Record<string, string> = {
 function ClassDetailPage() {
   const { classId } = Route.useParams()
   const navigate = useNavigate()
-  const search = useSearch({ from: '/dashboard/student-bills' })
+  const search = useSearch({ from: '/dashboard/class-bills' })
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const generateModalState = useOverlayState()
@@ -115,8 +115,13 @@ function ClassDetailPage() {
 
   function selectStudent(student: Student): void {
     navigate({
-      to: '/dashboard/student-bills/$classId/$studentId',
-      params: { classId, studentId: student.student_id },
+      to: '/dashboard/student-bills/$studentId',
+      params: { studentId: student.student_id },
+      search: {
+        classId,
+        tahun_ajaran_id: search.tahun_ajaran_id,
+        semester_id: search.semester_id,
+      },
     })
   }
 
@@ -126,7 +131,7 @@ function ClassDetailPage() {
   }
 
   function backToClasses(): void {
-    navigate({ to: '/dashboard/student-bills', search: {}, replace: true })
+    navigate({ to: '/dashboard/class-bills', search: {}, replace: true })
   }
 
   const isLoading = classLoading || classBillsLoading || (studentsLoading && !studentsPlaceholder)
