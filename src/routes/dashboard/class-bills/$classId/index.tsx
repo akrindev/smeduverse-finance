@@ -86,8 +86,6 @@ function ClassDetailPage() {
   const meta = studentsData?.meta
   const classBills = classBillsData?.data ?? []
   
-  const studentIds = useMemo(() => students.map(s => s.student_id), [students])
-
   const studentSummaryMap = useMemo(() => {
     const map = new Map<string, StudentSummary>()
     if (!classBills.length && !students.length) return map
@@ -173,7 +171,6 @@ function ClassDetailPage() {
         <GenerateBillModal
           state={generateModalState}
           selectedClass={selectedClass}
-          studentIds={studentIds}
           onSuccess={() => {
             refetchBills()
           }}
