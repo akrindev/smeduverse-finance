@@ -1,8 +1,8 @@
 import { Button, Chip, Modal, Separator, useOverlayState, Spinner, toast } from '@heroui/react'
-import { X, Receipt, Calendar as CalendarIcon, Info, Trash2 } from 'lucide-react'
+import { RotateCcw, X, Receipt, Calendar as CalendarIcon, Info, Trash2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { billStatusConfig, MONTH_NAMES_FULL } from '@/lib/student-bills'
-import { useBill, useVoidBill } from '@/hooks/use-bills'
+import { useBill, useVoidBill, useUnvoidBill } from '@/hooks/use-bills'
 import type { Bill } from '@/types/finance'
 
 interface BillDetailModalProps {
@@ -15,6 +15,7 @@ interface BillDetailModalProps {
 export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: BillDetailModalProps) {
   const { data: fullBill, isLoading } = useBill(initialBill?.id ?? 0)
   const voidMutation = useVoidBill()
+  const unvoidMutation = useUnvoidBill()
   
   const bill = fullBill || initialBill
 
@@ -28,6 +29,7 @@ export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: Bil
   const statusConfig = bill ? (billStatusConfig[bill.status] || { label: bill.status, color: 'default' }) : null
 
   const canVoid = bill?.status !== 'void' && (bill?.amount_paid ?? 0) === 0
+  const canUnvoid = bill?.status === 'void'
 
   const handleVoid = async () => {
     if (!bill) return
@@ -42,6 +44,22 @@ export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: Bil
       state.close()
     } catch (err: any) {
       toast.danger(err.message || 'Gagal membatalkan tagihan')
+    }
+  }
+
+  const handleUnvoid = async () => {
+    if (!bill) return
+    
+    if (!window.confirm('Apakah Anda yakin ingin mengaktifkan kembali (unvoid) tagihan ini?')) {
+      return
+    }
+
+    try {
+      await unvoidMutation.mutateAsync(bill.id)
+      toast.success('Tagihan berhasil diaktifkan kembali (unvoid)')
+      state.close()
+    } catch (err: any) {
+      toast.danger(err.message || 'Gagal mengaktifkan kembali tagihan')
     }
   }
 
@@ -176,6 +194,17 @@ export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: Bil
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Void Tagihan
+                  </Button>
+                )}
+                {canUnvoid && (
+                  <Button
+                    variant="ghost"
+                    className="text-accent border-accent/20 hover:bg-accent/10"
+                    onPress={handleUnvoid}
+                    isPending={unvoidMutation.isPending}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Unvoid Tagihan
                   </Button>
                 )}
               </div>
