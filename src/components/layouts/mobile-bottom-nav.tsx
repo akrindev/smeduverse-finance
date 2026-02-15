@@ -1,6 +1,6 @@
-import { Link } from '@tanstack/react-router'
-import { Card } from '@heroui/react'
 import { navItems } from '@/lib/nav-items'
+import { Card } from '@heroui/react'
+import { Link } from '@tanstack/react-router'
 
 interface MobileBottomNavProps {
   currentPath: string
@@ -9,10 +9,10 @@ interface MobileBottomNavProps {
 
 export function MobileBottomNav({ currentPath, currentSearch }: MobileBottomNavProps) {
   return (
-    <Card className="fixed bottom-2 left-2 right-2 z-30 rounded-2xl border border-border/50 bg-surface/92 backdrop-blur-xl lg:hidden">
-      <Card.Content className="p-1.5">
+    <Card className="lg:hidden right-2 bottom-2 left-2 z-30 fixed bg-surface/92 backdrop-blur-xl border border-border/50 rounded-2xl">
+      <Card.Content className="">
         <div
-          className="grid gap-0.5"
+          className="gap-0.5 grid"
           style={{
             gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))`,
           }}
