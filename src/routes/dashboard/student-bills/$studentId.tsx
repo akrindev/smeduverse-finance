@@ -19,9 +19,10 @@ import { Button, Card, Chip, Spinner, useOverlayState, toast, Avatar, Tabs, Tool
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw, RefreshCcw, BadgePercent } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw, RefreshCcw, BadgePercent, Calculator } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
+import { GenerateBillModal } from '@/components/student-bills/generate-bill-modal'
 
 const paymentStatusConfig: Record<string, { label: string; color: 'success' | 'danger' }> = {
   confirmed: { label: 'Terkonfirmasi', color: 'success' },
@@ -45,6 +46,7 @@ function StudentDetailPage() {
   const [paymentPagination, setPaymentPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const detailModalState = useOverlayState()
   const studentDetailModalState = useOverlayState()
+  const generateBillModalState = useOverlayState()
   const assignScholarshipModalState = useOverlayState()
   const paymentModalState = useOverlayState()
 
@@ -291,6 +293,18 @@ function StudentDetailPage() {
                   <RotateCw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} />
                 </Button>
                 <Tooltip.Content>Kalkulasi Ulang Tagihan</Tooltip.Content>
+              </Tooltip>
+
+              <Tooltip>
+                <Button
+                  variant="secondary"
+                  isIconOnly
+                  onPress={generateBillModalState.open}
+                  aria-label="Generate Tagihan"
+                >
+                  <Calculator className="w-4 h-4" />
+                </Button>
+                <Tooltip.Content>Generate Tagihan Baru</Tooltip.Content>
               </Tooltip>
 
               <Tooltip>
@@ -762,6 +776,15 @@ function StudentDetailPage() {
       <StudentDetailModal
         student={selectedStudent ?? null}
         state={studentDetailModalState}
+      />
+
+      <GenerateBillModal
+        state={generateBillModalState}
+        selectedClass={latestRombel}
+        studentIds={[studentId]}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['bills'] })
+        }}
       />
 
       <AssignScholarshipModal 
