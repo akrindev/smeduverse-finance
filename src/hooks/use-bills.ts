@@ -113,6 +113,15 @@ export function useVoidBill() {
   })
 }
 
+export function useUnvoidBill() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiPatch<Bill | SingleResponse<Bill>>(`/bills/${id}/unvoid`).then(unwrapResource),
+    onSuccess: () => qc.invalidateQueries({ queryKey: BILL_KEYS.all }),
+  })
+}
+
 export function useRecalculateBills() {
   const qc = useQueryClient()
   return useMutation({

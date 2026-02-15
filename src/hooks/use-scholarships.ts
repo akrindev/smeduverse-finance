@@ -23,6 +23,8 @@ const SCHOLARSHIP_KEYS = {
   detail: (id: number) => [...SCHOLARSHIP_KEYS.all, 'detail', id] as const,
   student: (studentId: string, params?: Record<string, unknown>) =>
     [...SCHOLARSHIP_KEYS.all, 'student', studentId, params] as const,
+  studentScholarships: (params?: Record<string, unknown>) =>
+    [...SCHOLARSHIP_KEYS.all, 'student-scholarships', params] as const,
 }
 
 export function useScholarships(params?: Record<string, unknown>) {
@@ -32,6 +34,19 @@ export function useScholarships(params?: Record<string, unknown>) {
       const response = await apiGet<
         PaginatedResponse<Scholarship> | { data: PaginatedResponse<Scholarship> }
       >('/scholarships', params)
+      return unwrapPaginated(response)
+    },
+    placeholderData: (previousData) => previousData,
+  })
+}
+
+export function useAllStudentScholarships(params?: Record<string, unknown>) {
+  return useQuery({
+    queryKey: SCHOLARSHIP_KEYS.studentScholarships(params),
+    queryFn: async () => {
+      const response = await apiGet<
+        PaginatedResponse<StudentScholarship> | { data: PaginatedResponse<StudentScholarship> }
+      >('/student-scholarships', params)
       return unwrapPaginated(response)
     },
     placeholderData: (previousData) => previousData,

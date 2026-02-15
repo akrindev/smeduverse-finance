@@ -73,9 +73,13 @@ export interface Student {
   fullname: string
   nipd: string | null
   nisn: string | null
+  photo?: string | null
   jenis_kelamin?: string | null
+  tanggal_lahir?: string | null
   rombel_aktif?: Rombel[]
   rombongan_belajar?: Rombel[]
+  summary?: ReceivablesSummary | null
+  by_status?: ReceivablesByStatus[]
 }
 
 export interface Rombel {
@@ -105,6 +109,7 @@ export interface Rombel {
     tanggal_keluar?: string | null
     keterangan_masuk?: string | null
     keterangan_keluar?: string | null
+    created_at?: string
   } | null
   jurusan?: {
     id?: number
@@ -280,6 +285,7 @@ export interface BillAllocation {
   finance_payment_id: number
   allocated_amount: number
   notes: string | null
+  payment?: Payment | null
 }
 
 export interface Bill {

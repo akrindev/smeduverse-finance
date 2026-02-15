@@ -1,4 +1,4 @@
-import type { Bill, Rombel } from '@/types/finance'
+import type { Bill, Rombel, Student } from '@/types/finance'
 
 export interface ClassMetrics {
   totalBills: number
@@ -9,6 +9,41 @@ export interface ClassMetrics {
 
 export function getRombelLabel(rombel: Rombel): string {
   return rombel.nama ?? rombel.name ?? rombel.code ?? '-'
+}
+
+export function getStudentLatestRombel(student: Student): Rombel | null {
+  const history = student.rombongan_belajar ?? []
+  if (history.length === 0) return null
+
+  return [...history].sort((a, b) => {
+    const dateA = new Date(a.pivot?.created_at || a.pivot?.tanggal_masuk || 0).getTime()
+    const dateB = new Date(b.pivot?.created_at || b.pivot?.tanggal_masuk || 0).getTime()
+    return dateB - dateA
+  })[0]
+}
+
+export function getStudentStatusInfo(student: Student): {
+  status: number
+  label: string
+  color: 'success' | 'accent' | 'danger' | 'default'
+} {
+  const latest = getStudentLatestRombel(student)
+  const pivot = latest?.pivot
+  const status = Number(pivot?.status ?? 0)
+
+  if (status === 1) {
+    return { status, label: pivot?.keterangan_masuk || 'Aktif', color: 'success' }
+  }
+
+  if (status === 2) {
+    return { status, label: pivot?.keterangan_keluar || 'Lulus', color: 'accent' }
+  }
+
+  return {
+    status,
+    label: pivot?.keterangan_keluar || 'Non-Aktif',
+    color: status === 0 ? 'default' : 'danger',
+  }
 }
 
 export function sortRombelsByJenjang(rombels: Rombel[]): Rombel[] {

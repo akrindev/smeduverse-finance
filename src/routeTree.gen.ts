@@ -18,10 +18,12 @@ import { Route as DashboardSppRouteImport } from './routes/dashboard/spp'
 import { Route as DashboardReportsRouteImport } from './routes/dashboard/reports'
 import { Route as DashboardPaymentsRouteImport } from './routes/dashboard/payments'
 import { Route as DashboardFeeTypesRouteImport } from './routes/dashboard/fee-types'
+import { Route as DashboardClassBillsRouteImport } from './routes/dashboard/class-bills'
 import { Route as DashboardBeasiswaRouteImport } from './routes/dashboard/beasiswa'
 import { Route as DashboardStudentBillsIndexRouteImport } from './routes/dashboard/student-bills/index'
-import { Route as DashboardStudentBillsClassIdIndexRouteImport } from './routes/dashboard/student-bills/$classId/index'
-import { Route as DashboardStudentBillsClassIdStudentIdRouteImport } from './routes/dashboard/student-bills/$classId/$studentId'
+import { Route as DashboardClassBillsIndexRouteImport } from './routes/dashboard/class-bills/index'
+import { Route as DashboardStudentBillsStudentIdRouteImport } from './routes/dashboard/student-bills/$studentId'
+import { Route as DashboardClassBillsClassIdIndexRouteImport } from './routes/dashboard/class-bills/$classId/index'
 
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
@@ -68,6 +70,11 @@ const DashboardFeeTypesRoute = DashboardFeeTypesRouteImport.update({
   path: '/fee-types',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardClassBillsRoute = DashboardClassBillsRouteImport.update({
+  id: '/class-bills',
+  path: '/class-bills',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardBeasiswaRoute = DashboardBeasiswaRouteImport.update({
   id: '/beasiswa',
   path: '/beasiswa',
@@ -79,17 +86,23 @@ const DashboardStudentBillsIndexRoute =
     path: '/',
     getParentRoute: () => DashboardStudentBillsRoute,
   } as any)
-const DashboardStudentBillsClassIdIndexRoute =
-  DashboardStudentBillsClassIdIndexRouteImport.update({
-    id: '/$classId/',
-    path: '/$classId/',
+const DashboardClassBillsIndexRoute =
+  DashboardClassBillsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => DashboardClassBillsRoute,
+  } as any)
+const DashboardStudentBillsStudentIdRoute =
+  DashboardStudentBillsStudentIdRouteImport.update({
+    id: '/$studentId',
+    path: '/$studentId',
     getParentRoute: () => DashboardStudentBillsRoute,
   } as any)
-const DashboardStudentBillsClassIdStudentIdRoute =
-  DashboardStudentBillsClassIdStudentIdRouteImport.update({
-    id: '/$classId/$studentId',
-    path: '/$classId/$studentId',
-    getParentRoute: () => DashboardStudentBillsRoute,
+const DashboardClassBillsClassIdIndexRoute =
+  DashboardClassBillsClassIdIndexRouteImport.update({
+    id: '/$classId/',
+    path: '/$classId/',
+    getParentRoute: () => DashboardClassBillsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -97,15 +110,17 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/beasiswa': typeof DashboardBeasiswaRoute
+  '/dashboard/class-bills': typeof DashboardClassBillsRouteWithChildren
   '/dashboard/fee-types': typeof DashboardFeeTypesRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard/student-bills': typeof DashboardStudentBillsRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/student-bills/$studentId': typeof DashboardStudentBillsStudentIdRoute
+  '/dashboard/class-bills/': typeof DashboardClassBillsIndexRoute
   '/dashboard/student-bills/': typeof DashboardStudentBillsIndexRoute
-  '/dashboard/student-bills/$classId/$studentId': typeof DashboardStudentBillsClassIdStudentIdRoute
-  '/dashboard/student-bills/$classId/': typeof DashboardStudentBillsClassIdIndexRoute
+  '/dashboard/class-bills/$classId/': typeof DashboardClassBillsClassIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -116,9 +131,10 @@ export interface FileRoutesByTo {
   '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/student-bills/$studentId': typeof DashboardStudentBillsStudentIdRoute
+  '/dashboard/class-bills': typeof DashboardClassBillsIndexRoute
   '/dashboard/student-bills': typeof DashboardStudentBillsIndexRoute
-  '/dashboard/student-bills/$classId/$studentId': typeof DashboardStudentBillsClassIdStudentIdRoute
-  '/dashboard/student-bills/$classId': typeof DashboardStudentBillsClassIdIndexRoute
+  '/dashboard/class-bills/$classId': typeof DashboardClassBillsClassIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,15 +142,17 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/dashboard/beasiswa': typeof DashboardBeasiswaRoute
+  '/dashboard/class-bills': typeof DashboardClassBillsRouteWithChildren
   '/dashboard/fee-types': typeof DashboardFeeTypesRoute
   '/dashboard/payments': typeof DashboardPaymentsRoute
   '/dashboard/reports': typeof DashboardReportsRoute
   '/dashboard/spp': typeof DashboardSppRoute
   '/dashboard/student-bills': typeof DashboardStudentBillsRouteWithChildren
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/student-bills/$studentId': typeof DashboardStudentBillsStudentIdRoute
+  '/dashboard/class-bills/': typeof DashboardClassBillsIndexRoute
   '/dashboard/student-bills/': typeof DashboardStudentBillsIndexRoute
-  '/dashboard/student-bills/$classId/$studentId': typeof DashboardStudentBillsClassIdStudentIdRoute
-  '/dashboard/student-bills/$classId/': typeof DashboardStudentBillsClassIdIndexRoute
+  '/dashboard/class-bills/$classId/': typeof DashboardClassBillsClassIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,15 +161,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/dashboard/beasiswa'
+    | '/dashboard/class-bills'
     | '/dashboard/fee-types'
     | '/dashboard/payments'
     | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard/student-bills'
     | '/dashboard/'
+    | '/dashboard/student-bills/$studentId'
+    | '/dashboard/class-bills/'
     | '/dashboard/student-bills/'
-    | '/dashboard/student-bills/$classId/$studentId'
-    | '/dashboard/student-bills/$classId/'
+    | '/dashboard/class-bills/$classId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -162,24 +182,27 @@ export interface FileRouteTypes {
     | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard'
+    | '/dashboard/student-bills/$studentId'
+    | '/dashboard/class-bills'
     | '/dashboard/student-bills'
-    | '/dashboard/student-bills/$classId/$studentId'
-    | '/dashboard/student-bills/$classId'
+    | '/dashboard/class-bills/$classId'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/dashboard'
     | '/dashboard/beasiswa'
+    | '/dashboard/class-bills'
     | '/dashboard/fee-types'
     | '/dashboard/payments'
     | '/dashboard/reports'
     | '/dashboard/spp'
     | '/dashboard/student-bills'
     | '/dashboard/'
+    | '/dashboard/student-bills/$studentId'
+    | '/dashboard/class-bills/'
     | '/dashboard/student-bills/'
-    | '/dashboard/student-bills/$classId/$studentId'
-    | '/dashboard/student-bills/$classId/'
+    | '/dashboard/class-bills/$classId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -253,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFeeTypesRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/class-bills': {
+      id: '/dashboard/class-bills'
+      path: '/class-bills'
+      fullPath: '/dashboard/class-bills'
+      preLoaderRoute: typeof DashboardClassBillsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/beasiswa': {
       id: '/dashboard/beasiswa'
       path: '/beasiswa'
@@ -267,35 +297,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardStudentBillsIndexRouteImport
       parentRoute: typeof DashboardStudentBillsRoute
     }
-    '/dashboard/student-bills/$classId/': {
-      id: '/dashboard/student-bills/$classId/'
-      path: '/$classId'
-      fullPath: '/dashboard/student-bills/$classId/'
-      preLoaderRoute: typeof DashboardStudentBillsClassIdIndexRouteImport
+    '/dashboard/class-bills/': {
+      id: '/dashboard/class-bills/'
+      path: '/'
+      fullPath: '/dashboard/class-bills/'
+      preLoaderRoute: typeof DashboardClassBillsIndexRouteImport
+      parentRoute: typeof DashboardClassBillsRoute
+    }
+    '/dashboard/student-bills/$studentId': {
+      id: '/dashboard/student-bills/$studentId'
+      path: '/$studentId'
+      fullPath: '/dashboard/student-bills/$studentId'
+      preLoaderRoute: typeof DashboardStudentBillsStudentIdRouteImport
       parentRoute: typeof DashboardStudentBillsRoute
     }
-    '/dashboard/student-bills/$classId/$studentId': {
-      id: '/dashboard/student-bills/$classId/$studentId'
-      path: '/$classId/$studentId'
-      fullPath: '/dashboard/student-bills/$classId/$studentId'
-      preLoaderRoute: typeof DashboardStudentBillsClassIdStudentIdRouteImport
-      parentRoute: typeof DashboardStudentBillsRoute
+    '/dashboard/class-bills/$classId/': {
+      id: '/dashboard/class-bills/$classId/'
+      path: '/$classId'
+      fullPath: '/dashboard/class-bills/$classId/'
+      preLoaderRoute: typeof DashboardClassBillsClassIdIndexRouteImport
+      parentRoute: typeof DashboardClassBillsRoute
     }
   }
 }
 
+interface DashboardClassBillsRouteChildren {
+  DashboardClassBillsIndexRoute: typeof DashboardClassBillsIndexRoute
+  DashboardClassBillsClassIdIndexRoute: typeof DashboardClassBillsClassIdIndexRoute
+}
+
+const DashboardClassBillsRouteChildren: DashboardClassBillsRouteChildren = {
+  DashboardClassBillsIndexRoute: DashboardClassBillsIndexRoute,
+  DashboardClassBillsClassIdIndexRoute: DashboardClassBillsClassIdIndexRoute,
+}
+
+const DashboardClassBillsRouteWithChildren =
+  DashboardClassBillsRoute._addFileChildren(DashboardClassBillsRouteChildren)
+
 interface DashboardStudentBillsRouteChildren {
+  DashboardStudentBillsStudentIdRoute: typeof DashboardStudentBillsStudentIdRoute
   DashboardStudentBillsIndexRoute: typeof DashboardStudentBillsIndexRoute
-  DashboardStudentBillsClassIdStudentIdRoute: typeof DashboardStudentBillsClassIdStudentIdRoute
-  DashboardStudentBillsClassIdIndexRoute: typeof DashboardStudentBillsClassIdIndexRoute
 }
 
 const DashboardStudentBillsRouteChildren: DashboardStudentBillsRouteChildren = {
+  DashboardStudentBillsStudentIdRoute: DashboardStudentBillsStudentIdRoute,
   DashboardStudentBillsIndexRoute: DashboardStudentBillsIndexRoute,
-  DashboardStudentBillsClassIdStudentIdRoute:
-    DashboardStudentBillsClassIdStudentIdRoute,
-  DashboardStudentBillsClassIdIndexRoute:
-    DashboardStudentBillsClassIdIndexRoute,
 }
 
 const DashboardStudentBillsRouteWithChildren =
@@ -305,6 +351,7 @@ const DashboardStudentBillsRouteWithChildren =
 
 interface DashboardRouteChildren {
   DashboardBeasiswaRoute: typeof DashboardBeasiswaRoute
+  DashboardClassBillsRoute: typeof DashboardClassBillsRouteWithChildren
   DashboardFeeTypesRoute: typeof DashboardFeeTypesRoute
   DashboardPaymentsRoute: typeof DashboardPaymentsRoute
   DashboardReportsRoute: typeof DashboardReportsRoute
@@ -315,6 +362,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardBeasiswaRoute: DashboardBeasiswaRoute,
+  DashboardClassBillsRoute: DashboardClassBillsRouteWithChildren,
   DashboardFeeTypesRoute: DashboardFeeTypesRoute,
   DashboardPaymentsRoute: DashboardPaymentsRoute,
   DashboardReportsRoute: DashboardReportsRoute,

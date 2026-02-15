@@ -1,21 +1,23 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { BadgePercent, CalendarDays, GraduationCap, Plus, Users, Edit2, UserPlus } from 'lucide-react'
-import { Button, Card, Chip, Input, Spinner, TextField, Modal, Form, Label, ListBox, Select, Switch, useOverlayState, FieldError } from '@heroui/react'
-import { useState } from 'react'
+import { BadgePercent, CalendarDays, GraduationCap, Plus, Users, Edit2, UserPlus, History, Search } from 'lucide-react'
+import { Button, Card, Chip, Input, Spinner, TextField, Modal, Form, Label, ListBox, Select, Switch, useOverlayState, FieldError, Tabs, Avatar } from '@heroui/react'
+import { useState, useMemo } from 'react'
 import { EmptyState } from '@/components/shared/empty-state'
 import { ErrorState } from '@/components/shared/error-state'
 import { LoadingState } from '@/components/shared/loading-state'
 import { PageHeader } from '@/components/shared/page-header'
 import { StatCard } from '@/components/shared/stat-card'
-import { useScholarships, useCreateScholarship, useUpdateScholarship } from '@/hooks/use-scholarships'
+import { useScholarships, useCreateScholarship, useUpdateScholarship, useAllStudentScholarships } from '@/hooks/use-scholarships'
 import { useFeeTypes } from '@/hooks/use-fee-types'
 import { TablePagination } from '@/lib/table-pagination'
-import { formatCurrency } from '@/lib/format'
-import type { DiscountType, Scholarship } from '@/types/finance'
+import { formatCurrency, formatDate } from '@/lib/format'
+import type { DiscountType, Scholarship, StudentScholarship } from '@/types/finance'
 import {
   cardHeaderClass,
   pageShellClass,
   surfaceCardClass,
+  tableBodyCellClass,
+  tableHeadCellClass,
 } from '@/lib/page-styles'
 import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
@@ -33,7 +35,9 @@ function formatScholarshipValue(discountType: 'fixed' | 'percent', discountValue
 
 function BeasiswaPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [historySearchQuery, setHistorySearchQuery] = useState('')
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
+  const [historyPagination, setHistoryPagination] = useState({ pageIndex: 0, pageSize: 15 })
 
   const modalState = useOverlayState()
   const assignModalState = useOverlayState()
@@ -45,6 +49,16 @@ function BeasiswaPage() {
     search: searchQuery || undefined,
   })
 
+  const { 
+    data: historyData, 
+    isLoading: historyLoading,
+    isFetching: historyFetching,
+  } = useAllStudentScholarships({
+    page: historyPagination.pageIndex + 1,
+    per_page: historyPagination.pageSize,
+    search: historySearchQuery || undefined,
+  })
+
   const { data: feeTypesData } = useFeeTypes({ per_page: 100 })
   const feeTypes = feeTypesData?.data ?? []
 
@@ -53,6 +67,9 @@ function BeasiswaPage() {
 
   const scholarshipsData = data?.data ?? []
   const meta = data?.meta
+
+  const scholarshipHistory = historyData?.data ?? []
+  const historyMeta = historyData?.meta
 
   const activeCount = scholarshipsData.filter((item) => item.is_active).length
   const inactiveCount = scholarshipsData.length - activeCount
@@ -130,112 +147,247 @@ function BeasiswaPage() {
           icon={Users}
           iconBgClass="bg-success/15"
           iconColorClass="text-success"
-          label="Aktif"
-          value={activeCount}
+          label="Siswa Penerima"
+          value={historyMeta?.total ?? 0}
         />
         <StatCard
           icon={CalendarDays}
           iconBgClass="bg-warning/15"
           iconColorClass="text-warning"
-          label="Nonaktif"
-          value={inactiveCount}
+          label="Program Aktif"
+          value={activeCount}
         />
       </div>
 
-      <Card className={surfaceCardClass}>
-        <Card.Header className={cardHeaderClass}>
-          <TextField fullWidth>
-            <Input
-              aria-label="Cari beasiswa"
-              value={searchQuery}
-              onChange={(event) => {
-                setSearchQuery(event.target.value)
-                setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-              }}
-              placeholder="Cari nama, kode, atau deskripsi beasiswa"
-            />
-          </TextField>
-        </Card.Header>
-        <Card.Content className="relative min-h-[300px]">
-          {isFetching && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
-              <Spinner size="lg" />
-            </div>
-          )}
-          {scholarshipsData.length === 0 ? (
-            <EmptyState icon={GraduationCap} message="Tidak ada data beasiswa ditemukan." />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                {scholarshipsData.map((item) => (
-                  <Card key={item.id} className={surfaceCardClass}>
-                    <Card.Content className="space-y-3 relative">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs text-default-500 font-mono">{item.code}</p>
-                          <h3 className="text-base font-semibold mt-1">{item.name}</h3>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <Chip
-                            size="sm"
-                            variant="soft"
-                            color={item.is_active ? 'success' : 'default'}
-                          >
-                            <Chip.Label>{item.is_active ? 'Aktif' : 'Nonaktif'}</Chip.Label>
-                          </Chip>
-                          <Button size="sm" isIconOnly variant="secondary" onPress={() => handleEdit(item)}>
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <p className="text-sm text-default-500 line-clamp-2 min-h-[40px]">
-                        {item.description ?? 'Tanpa deskripsi'}
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-3 pt-1">
-                        <div className="rounded-2xl bg-accent-soft/40 p-3">
-                          <div className="text-xs text-default-500 flex items-center gap-1.5">
-                            <BadgePercent className="w-3.5 h-3.5" />
-                            Nilai Diskon
-                          </div>
-                          <p className="text-sm font-semibold mt-1">
-                            {formatScholarshipValue(item.discount_type, item.discount_value)}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-surface p-3 border border-border/50">
-                          <div className="text-xs text-default-500">Tipe Biaya</div>
-                          <p className="text-sm font-semibold mt-1 truncate">{item.fee_type?.name ?? 'Semua biaya'}</p>
-                        </div>
-                      </div>
-
-                      <div className="text-xs text-default-500">
-                        Periode:{' '}
-                        {item.start_date ?? '-'} sampai {item.end_date ?? '-'}
-                      </div>
-                    </Card.Content>
-                  </Card>
-                ))}
+      <Tabs aria-label="Menu Beasiswa" variant="secondary" className="w-full">
+        <Tabs.ListContainer>
+          <Tabs.List aria-label="Pilihan Menu">
+            <Tabs.Tab id="programs">
+              <div className="flex items-center gap-2">
+                <BadgePercent className="w-4 h-4" />
+                <span>Program Beasiswa</span>
+                {scholarshipsData.length > 0 && (
+                  <Chip size="sm" variant="soft" color="accent" className="h-5 min-w-5 px-1 font-mono text-[10px]">
+                    <Chip.Label>{meta?.total}</Chip.Label>
+                  </Chip>
+                )}
               </div>
+              <Tabs.Indicator />
+            </Tabs.Tab>
+            <Tabs.Tab id="history">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4" />
+                <span>Riwayat Penerima</span>
+                {(historyMeta?.total ?? 0) > 0 && (
+                  <Chip size="sm" variant="soft" color="accent" className="h-5 min-w-5 px-1 font-mono text-[10px]">
+                    <Chip.Label>{historyMeta?.total}</Chip.Label>
+                  </Chip>
+                )}
+              </div>
+              <Tabs.Indicator />
+            </Tabs.Tab>
+          </Tabs.List>
+        </Tabs.ListContainer>
 
-              <TablePagination
-                pageIndex={pagination.pageIndex}
-                pageCount={meta?.last_page ?? 1}
-                pageSize={pagination.pageSize}
-                totalRows={meta?.total ?? 0}
-                visibleRows={scholarshipsData.length}
-                canPreviousPage={pagination.pageIndex > 0}
-                canNextPage={pagination.pageIndex < (meta?.last_page ?? 1) - 1}
-                onPreviousPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }))}
-                onNextPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }))}
-              />
-            </>
-          )}
-        </Card.Content>
-      </Card>
+        <Tabs.Panel id="programs" className="pt-6">
+          <Card className={surfaceCardClass}>
+            <Card.Header className={cardHeaderClass}>
+              <TextField fullWidth>
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-default-500 z-10" />
+                  <Input
+                    aria-label="Cari beasiswa"
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(event) => {
+                      setSearchQuery(event.target.value)
+                      setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+                    }}
+                    placeholder="Cari nama, kode, atau deskripsi beasiswa"
+                  />
+                </div>
+              </TextField>
+            </Card.Header>
+            <Card.Content className="relative min-h-[300px]">
+              {isFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
+              {scholarshipsData.length === 0 ? (
+                <EmptyState icon={GraduationCap} message="Tidak ada data beasiswa ditemukan." />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    {scholarshipsData.map((item) => (
+                      <Card key={item.id} className={surfaceCardClass}>
+                        <Card.Content className="space-y-3 relative">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-xs text-default-500 font-mono">{item.code}</p>
+                              <h3 className="text-base font-semibold mt-1">{item.name}</h3>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <Chip
+                                size="sm"
+                                variant="soft"
+                                color={item.is_active ? 'success' : 'default'}
+                              >
+                                <Chip.Label>{item.is_active ? 'Aktif' : 'Nonaktif'}</Chip.Label>
+                              </Chip>
+                              <Button size="sm" isIconOnly variant="secondary" onPress={() => handleEdit(item)}>
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
 
-      <Modal>
-        <Modal.Backdrop isOpen={modalState.isOpen} onOpenChange={modalState.setOpen}>
+                          <p className="text-sm text-default-500 line-clamp-2 min-h-[40px]">
+                            {item.description ?? 'Tanpa deskripsi'}
+                          </p>
+
+                          <div className="grid grid-cols-2 gap-3 pt-1">
+                            <div className="rounded-2xl bg-accent-soft/40 p-3">
+                              <div className="text-xs text-default-500 flex items-center gap-1.5">
+                                <BadgePercent className="w-3.5 h-3.5" />
+                                Nilai Diskon
+                              </div>
+                              <p className="text-sm font-semibold mt-1">
+                                {formatScholarshipValue(item.discount_type, item.discount_value)}
+                              </p>
+                            </div>
+                            <div className="rounded-2xl bg-surface p-3 border border-border/50">
+                              <div className="text-xs text-default-500">Tipe Biaya</div>
+                              <p className="text-sm font-semibold mt-1 truncate">{item.fee_type?.name ?? 'Semua biaya'}</p>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-default-500">
+                            Periode:{' '}
+                            {item.start_date ?? '-'} sampai {item.end_date ?? '-'}
+                          </div>
+                        </Card.Content>
+                      </Card>
+                    ))}
+                  </div>
+
+                  <TablePagination
+                    pageIndex={pagination.pageIndex}
+                    pageCount={meta?.last_page ?? 1}
+                    pageSize={pagination.pageSize}
+                    totalRows={meta?.total ?? 0}
+                    visibleRows={scholarshipsData.length}
+                    canPreviousPage={pagination.pageIndex > 0}
+                    canNextPage={pagination.pageIndex < (meta?.last_page ?? 1) - 1}
+                    onPreviousPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }))}
+                    onNextPage={() => setPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }))}
+                  />
+                </>
+              )}
+            </Card.Content>
+          </Card>
+        </Tabs.Panel>
+
+        <Tabs.Panel id="history" className="pt-6">
+          <Card className={surfaceCardClass}>
+            <Card.Header className={cardHeaderClass}>
+              <TextField fullWidth>
+                <div className="relative w-full">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-default-500 z-10" />
+                  <Input
+                    aria-label="Cari riwayat penerima"
+                    className="pl-10"
+                    value={historySearchQuery}
+                    onChange={(event) => {
+                      setHistorySearchQuery(event.target.value)
+                      setHistoryPagination((prev) => ({ ...prev, pageIndex: 0 }))
+                    }}
+                    placeholder="Cari nama siswa atau program beasiswa..."
+                  />
+                </div>
+              </TextField>
+            </Card.Header>
+            <Card.Content className="relative min-h-[400px]">
+              {historyFetching && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface/50 backdrop-blur-[1px] transition-opacity">
+                  <Spinner size="lg" />
+                </div>
+              )}
+              
+              {scholarshipHistory.length === 0 ? (
+                <EmptyState icon={History} message="Belum ada riwayat penerima beasiswa." />
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-border/70 border-t">
+                        <th className={tableHeadCellClass}>Siswa</th>
+                        <th className={tableHeadCellClass}>Program</th>
+                        <th className={tableHeadCellClass}>Potongan</th>
+                        <th className={tableHeadCellClass}>Periode</th>
+                        <th className={tableHeadCellClass}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scholarshipHistory.map((item) => (
+                        <tr key={item.id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
+                          <td className={tableBodyCellClass}>
+                            <div className="flex items-center gap-3">
+                              <Avatar size="sm">
+                                <Avatar.Image src={item.student?.photo || undefined} alt={item.student?.fullname} />
+                                <Avatar.Fallback>{item.student?.fullname?.charAt(0)}</Avatar.Fallback>
+                              </Avatar>
+                              <div className="flex flex-col leading-tight">
+                                <span className="font-semibold">{item.student?.fullname}</span>
+                                <span className="text-[10px] text-default-500 font-mono">{item.student?.nipd || item.student?.nisn || '-'}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <p className="font-medium">{item.scholarship?.name}</p>
+                            <p className="text-[10px] text-default-500 font-mono">{item.scholarship?.code}</p>
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <p className="font-bold text-success">
+                              {item.scholarship?.discount_type === 'percent'
+                                ? `${item.scholarship.discount_value}%`
+                                : formatCurrency(item.scholarship?.discount_value || 0)}
+                            </p>
+                            <p className="text-[9px] text-default-500">{item.scholarship?.fee_type?.name || 'Semua Biaya'}</p>
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <p className="text-xs">{item.semester?.nama || item.semester?.name || '-'}</p>
+                            <p className="text-[10px] text-default-500">{item.tahun_ajaran?.nama || item.tahun_ajaran?.name || '-'}</p>
+                          </td>
+                          <td className={tableBodyCellClass}>
+                            <Chip size="sm" variant="soft" color={item.is_active ? 'success' : 'default'}>
+                              <Chip.Label>{item.is_active ? 'Aktif' : 'Nonaktif'}</Chip.Label>
+                            </Chip>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  <TablePagination
+                    pageIndex={historyPagination.pageIndex}
+                    pageCount={historyMeta?.last_page ?? 1}
+                    pageSize={historyPagination.pageSize}
+                    totalRows={historyMeta?.total ?? 0}
+                    visibleRows={scholarshipHistory.length}
+                    canPreviousPage={historyPagination.pageIndex > 0}
+                    canNextPage={historyPagination.pageIndex < (historyMeta?.last_page ?? 1) - 1}
+                    onPreviousPage={() => setHistoryPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex - 1 }))}
+                    onNextPage={() => setHistoryPagination((prev) => ({ ...prev, pageIndex: prev.pageIndex + 1 }))}
+                  />
+                </div>
+              )}
+            </Card.Content>
+          </Card>
+        </Tabs.Panel>
+      </Tabs>
+
+      <Modal state={modalState}>
+        <Modal.Backdrop>
           <Modal.Container>
             <Modal.Dialog className="sm:max-w-xl">
               <Modal.CloseTrigger />
@@ -328,18 +480,13 @@ function BeasiswaPage() {
                   </Switch>
                 </Modal.Body>
                 <Modal.Footer>
-                  <Button variant="secondary" slot="close">Batal</Button>
+                  <Button variant="secondary" onPress={modalState.close}>Batal</Button>
                   <Button
                     type="submit"
                     className="bg-accent text-accent-foreground"
                     isPending={createMutation.isPending || updateMutation.isPending}
                   >
-                    {({isPending}) => (
-                      <>
-                        {isPending ? <Spinner color="current" size="sm" /> : null}
-                        Simpan
-                      </>
-                    )}
+                    Simpan
                   </Button>
                 </Modal.Footer>
               </Form>
@@ -354,3 +501,4 @@ function BeasiswaPage() {
     </div>
   )
 }
+

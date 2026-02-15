@@ -1,11 +1,12 @@
-import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@heroui/react'
+import { Button, Chip, Modal, Separator, useOverlayState, Spinner, Avatar } from '@heroui/react'
 import { X, User, GraduationCap, Calendar, Info, BadgePercent, Wallet } from 'lucide-react'
 import type { Student } from '@/types/finance'
 import { tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
-import { getRombelLabel } from '@/lib/tagihan-siswa'
+import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import { useStudentScholarships } from '@/hooks/use-scholarships'
 import { usePayments } from '@/hooks/use-payments'
-import { formatCurrency } from '@/lib/format'
+import { useRefTahunAjarans } from '@/hooks/use-references'
+import { formatCurrency, formatDate } from '@/lib/format'
 
 interface StudentDetailModalProps {
   student: Student | null
@@ -22,11 +23,16 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
     state.isOpen && student?.student_id ? { student_id: student.student_id, per_page: 50 } : undefined
   )
 
+  const { data: yearsData } = useRefTahunAjarans(undefined, { enabled: state.isOpen })
+
   if (!student) return null
 
+  const statusInfo = getStudentStatusInfo(student)
+  const latestRombel = getStudentLatestRombel(student)
   const rombelHistory = student.rombongan_belajar ?? []
   const assignedScholarships = scholarshipsData?.data ?? []
   const paymentHistory = paymentsData?.data ?? []
+  const years = yearsData?.data ?? []
 
   return (
     <Modal state={state}>
@@ -45,13 +51,28 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-                      <User className="w-6 h-6" />
-                    </div>
+                    <Avatar className="w-12 h-12">
+                      <Avatar.Image src={student.photo || undefined} alt={student.fullname} />
+                      <Avatar.Fallback>
+                        <User className="w-6 h-6" />
+                      </Avatar.Fallback>
+                    </Avatar>
                     <div>
-                      <p className="text-lg font-semibold">{student.fullname}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-lg font-semibold">{student.fullname}</p>
+                        {statusInfo && statusInfo.status !== 1 && (
+                          <Chip
+                            size="sm"
+                            variant="soft"
+                            color={statusInfo.color}
+                          >
+                            <Chip.Label>{statusInfo.label}</Chip.Label>
+                          </Chip>
+                        )}
+                      </div>
                       <p className="text-sm text-default-500 uppercase">
                         {student.jenis_kelamin === 'p' ? 'Perempuan' : 'Laki-laki'}
+                        {latestRombel && ` • ${getRombelLabel(latestRombel)}`}
                       </p>
                     </div>
                   </div>
@@ -64,6 +85,10 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
                     <div className="space-y-1">
                       <p className="text-xs text-default-500 font-medium uppercase tracking-wider">NISN</p>
                       <p className="text-sm font-medium">{student.nisn || '-'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-default-500 font-medium uppercase tracking-wider">Tgl Lahir</p>
+                      <p className="text-sm font-medium">{student.tanggal_lahir ? formatDate(student.tanggal_lahir) : '-'}</p>
                     </div>
                   </div>
                 </div>
@@ -235,49 +260,57 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
                             </td>
                           </tr>
                         ) : (
-                          rombelHistory.map((rombel) => (
-                            <tr key={rombel.id} className="hover:bg-surface/30 transition-colors">
-                              <td className={tableBodyCellClass}>
-                                <p className="font-semibold">{getRombelLabel(rombel)}</p>
-                                <p className="text-[10px] text-default-500">
-                                  {rombel.tingkat_kelas} - {rombel.jurusan?.name || rombel.jurusan?.nama || '-'}
-                                </p>
-                              </td>
-                              <td className={tableBodyCellClass}>
-                                {rombel.tahun_ajaran?.nama || rombel.tahun_ajaran?.name || '-'}
-                              </td>
-                              <td className={tableBodyCellClass}>
-                                <div className="flex items-center gap-1.5">
-                                  <Calendar className="w-3 h-3 text-default-400" />
-                                  <span>{rombel.pivot?.tanggal_masuk || '-'}</span>
-                                </div>
-                              </td>
-                              <td className={tableBodyCellClass}>
-                                {(() => {
-                                  const status = Number(rombel.pivot?.status)
-                                  if (status === 1) {
+                          rombelHistory.map((rombel) => {
+                            const tahunAjaran = rombel.tahun_ajaran?.nama || 
+                              rombel.tahun_ajaran?.name || 
+                              years.find(y => y.id === rombel.tahun_ajaran_id)?.nama ||
+                              years.find(y => y.id === rombel.tahun_ajaran_id)?.name ||
+                              '-'
+
+                            return (
+                              <tr key={rombel.id} className="hover:bg-surface/30 transition-colors">
+                                <td className={tableBodyCellClass}>
+                                  <p className="font-semibold">{getRombelLabel(rombel)}</p>
+                                  <p className="text-[10px] text-default-500">
+                                    {rombel.tingkat_kelas} - {rombel.jurusan?.name || rombel.jurusan?.nama || '-'}
+                                  </p>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  {tahunAjaran}
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  <div className="flex items-center gap-1.5">
+                                    <Calendar className="w-3 h-3 text-default-400" />
+                                    <span>{rombel.pivot?.tanggal_masuk || '-'}</span>
+                                  </div>
+                                </td>
+                                <td className={tableBodyCellClass}>
+                                  {(() => {
+                                    const status = Number(rombel.pivot?.status)
+                                    if (status === 1) {
+                                      return (
+                                        <Chip size="sm" variant="soft" color="success">
+                                          Aktif
+                                        </Chip>
+                                      )
+                                    }
+                                    if (status === 2) {
+                                      return (
+                                        <Chip size="sm" variant="soft" color="accent">
+                                          Lulus
+                                        </Chip>
+                                      )
+                                    }
                                     return (
-                                      <Chip size="sm" variant="soft" color="success">
-                                        Aktif
+                                      <Chip size="sm" variant="soft" color="default">
+                                        Tidak Aktif
                                       </Chip>
                                     )
-                                  }
-                                  if (status === 2) {
-                                    return (
-                                      <Chip size="sm" variant="soft" color="accent">
-                                        Lulus
-                                      </Chip>
-                                    )
-                                  }
-                                  return (
-                                    <Chip size="sm" variant="soft" color="default">
-                                      Tidak Aktif
-                                    </Chip>
-                                  )
-                                })()}
-                              </td>
-                            </tr>
-                          ))
+                                  })()}
+                                </td>
+                              </tr>
+                            )
+                          })
                         )}
                       </tbody>
                     </table>

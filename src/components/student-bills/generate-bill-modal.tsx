@@ -100,8 +100,10 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
           amount: Number(formData.get('amount')),
           due_date: formData.get('due_date') as string || undefined,
           title: formData.get('title') as string || undefined,
+          student_ids: initialStudentIds?.length === 1 ? initialStudentIds : undefined,
         })
-        toast.success('Tagihan SPP berhasil dibuat untuk satu kelas.')
+        const targetLabel = initialStudentIds?.length === 1 ? 'untuk 1 siswa' : 'untuk satu kelas'
+        toast.success(`Tagihan SPP berhasil dibuat ${targetLabel}.`)
       } else {
         if (studentIds.length === 0) {
           toast.danger('Tidak ada siswa di kelas ini untuk ditagihkan.')
@@ -115,7 +117,8 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
           title: formData.get('title') as string,
           due_date: formData.get('due_date') as string || undefined,
         })
-        toast.success('Tagihan biaya berhasil dibuat.')
+        const targetLabel = initialStudentIds?.length === 1 ? 'untuk 1 siswa' : 'untuk seluruh siswa di kelas'
+        toast.success(`Tagihan biaya berhasil dibuat ${targetLabel}.`)
       }
       
       state.close()
@@ -326,7 +329,11 @@ export function GenerateBillModal({ state, selectedClass: initialClass, studentI
                     </TextField>
                     
                     <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl text-xs text-warning-foreground">
-                      Peringatan: Tagihan biaya akan dibuat untuk <strong>seluruh siswa</strong> di kelas ini.
+                      Peringatan: Tagihan biaya akan dibuat untuk{' '}
+                      <strong>
+                        {initialStudentIds?.length === 1 ? '1 siswa terpilih ini' : 'seluruh siswa di kelas ini'}
+                      </strong>
+                      .
                     </div>
                   </div>
                 )}

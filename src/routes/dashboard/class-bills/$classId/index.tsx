@@ -13,7 +13,7 @@ import {
 import { getRombelLabel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
-import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState, Avatar } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
@@ -27,7 +27,7 @@ interface StudentSummary {
   totalOutstanding: number
 }
 
-export const Route = createFileRoute('/dashboard/student-bills/$classId/')({
+export const Route = createFileRoute('/dashboard/class-bills/$classId/')({
   component: ClassDetailPage,
 })
 
@@ -39,7 +39,7 @@ const genderLabels: Record<string, string> = {
 function ClassDetailPage() {
   const { classId } = Route.useParams()
   const navigate = useNavigate()
-  const search = useSearch({ from: '/dashboard/student-bills' })
+  const search = useSearch({ from: '/dashboard/class-bills' })
 
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const generateModalState = useOverlayState()
@@ -86,8 +86,6 @@ function ClassDetailPage() {
   const meta = studentsData?.meta
   const classBills = classBillsData?.data ?? []
   
-  const studentIds = useMemo(() => students.map(s => s.student_id), [students])
-
   const studentSummaryMap = useMemo(() => {
     const map = new Map<string, StudentSummary>()
     if (!classBills.length && !students.length) return map
@@ -115,8 +113,14 @@ function ClassDetailPage() {
 
   function selectStudent(student: Student): void {
     navigate({
-      to: '/dashboard/student-bills/$classId/$studentId',
-      params: { classId, studentId: student.student_id },
+      to: '/dashboard/student-bills/$studentId',
+      params: { studentId: student.student_id },
+      search: {
+        classId,
+        tahun_ajaran_id: search.tahun_ajaran_id,
+        semester_id: search.semester_id,
+        from: 'class',
+      },
     })
   }
 
@@ -126,7 +130,7 @@ function ClassDetailPage() {
   }
 
   function backToClasses(): void {
-    navigate({ to: '/dashboard/student-bills', search: {}, replace: true })
+    navigate({ to: '/dashboard/class-bills', search: {}, replace: true })
   }
 
   const isLoading = classLoading || classBillsLoading || (studentsLoading && !studentsPlaceholder)
@@ -167,7 +171,6 @@ function ClassDetailPage() {
         <GenerateBillModal
           state={generateModalState}
           selectedClass={selectedClass}
-          studentIds={studentIds}
           onSuccess={() => {
             refetchBills()
           }}
@@ -211,7 +214,15 @@ function ClassDetailPage() {
 
                       return (
                         <tr key={student.student_id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
-                          <td className={`${tableBodyCellClass} font-medium text-default-700`}>{student.fullname}</td>
+                          <td className={`${tableBodyCellClass} font-medium text-default-700`}>
+                            <div className="flex items-center gap-3">
+                              <Avatar size="sm">
+                                <Avatar.Image src={student.photo || undefined} alt={student.fullname} />
+                                <Avatar.Fallback>{student.fullname.charAt(0)}</Avatar.Fallback>
+                              </Avatar>
+                              <span>{student.fullname}</span>
+                            </div>
+                          </td>
                           <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
                           <td className={tableBodyCellClass}>
                             {student.jenis_kelamin ? genderLabels[student.jenis_kelamin.toLowerCase()] || student.jenis_kelamin : '-'}
