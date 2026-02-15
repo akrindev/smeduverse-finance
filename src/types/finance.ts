@@ -285,6 +285,7 @@ export interface BillAllocation {
   finance_payment_id: number
   allocated_amount: number
   notes: string | null
+  payment?: Payment | null
 }
 
 export interface Bill {

@@ -82,12 +82,42 @@ export function BillDetailModal({ bill, state, canPay, onPay }: BillDetailModalP
                 <>
                   <Separator />
                   <div>
-                    <p className="text-sm font-medium mb-2">Riwayat Alokasi Pembayaran</p>
-                    <div className="space-y-1.5">
+                    <p className="text-sm font-medium mb-3">Riwayat Pembayaran</p>
+                    <div className="space-y-3">
                       {(bill.allocations ?? []).map((allocation) => (
-                        <div key={allocation.id} className="flex items-center justify-between rounded-xl bg-background/60 p-2.5">
-                          <span className="text-xs text-default-500">Pembayaran #{allocation.finance_payment_id}</span>
-                          <span className="text-sm font-medium text-success">{formatCurrency(allocation.allocated_amount)}</span>
+                        <div key={allocation.id} className="rounded-2xl border border-border/50 p-3 space-y-2 bg-surface/30">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-mono font-medium text-accent">
+                                {allocation.payment?.payment_number || `#${allocation.finance_payment_id}`}
+                              </span>
+                              <span className="text-[10px] text-default-500">
+                                {allocation.payment?.payment_date ? formatDate(allocation.payment.payment_date) : 'Tanggal tidak tersedia'}
+                              </span>
+                            </div>
+                            <span className="text-sm font-bold text-success">
+                              {formatCurrency(allocation.allocated_amount)}
+                            </span>
+                          </div>
+                          
+                          {allocation.payment && (
+                            <div className="flex items-center gap-2">
+                              <div className="bg-default/10 px-2 py-0.5 rounded-full text-default-600 text-[10px] capitalize">
+                                {allocation.payment.payment_method}
+                              </div>
+                              {allocation.payment.reference_number && (
+                                <span className="text-[10px] text-default-400 truncate max-w-[150px]">
+                                  Ref: {allocation.payment.reference_number}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          
+                          {allocation.notes && (
+                            <p className="text-[10px] text-default-500 italic bg-background/40 p-1.5 rounded-lg border border-border/30">
+                              Catatan: {allocation.notes}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
