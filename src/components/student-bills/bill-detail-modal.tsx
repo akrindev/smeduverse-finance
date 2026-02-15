@@ -1,8 +1,8 @@
-import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@heroui/react'
-import { X, Receipt, Calendar as CalendarIcon, Info } from 'lucide-react'
+import { Button, Chip, Modal, Separator, useOverlayState, Spinner, toast } from '@heroui/react'
+import { X, Receipt, Calendar as CalendarIcon, Info, Trash2 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { billStatusConfig, MONTH_NAMES_FULL } from '@/lib/student-bills'
-import { useBill } from '@/hooks/use-bills'
+import { useBill, useVoidBill } from '@/hooks/use-bills'
 import type { Bill } from '@/types/finance'
 
 interface BillDetailModalProps {
@@ -14,6 +14,7 @@ interface BillDetailModalProps {
 
 export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: BillDetailModalProps) {
   const { data: fullBill, isLoading } = useBill(initialBill?.id ?? 0)
+  const voidMutation = useVoidBill()
   
   const bill = fullBill || initialBill
 
@@ -25,6 +26,24 @@ export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: Bil
   const hasScholarship = Boolean(bill?.student_scholarship)
 
   const statusConfig = bill ? (billStatusConfig[bill.status] || { label: bill.status, color: 'default' }) : null
+
+  const canVoid = bill?.status !== 'void' && (bill?.amount_paid ?? 0) === 0
+
+  const handleVoid = async () => {
+    if (!bill) return
+    
+    if (!window.confirm('Apakah Anda yakin ingin membatalkan (void) tagihan ini? Tindakan ini tidak dapat dibatalkan.')) {
+      return
+    }
+
+    try {
+      await voidMutation.mutateAsync(bill.id)
+      toast.success('Tagihan berhasil dibatalkan (void)')
+      state.close()
+    } catch (err: any) {
+      toast.danger(err.message || 'Gagal membatalkan tagihan')
+    }
+  }
 
   return (
     <Modal state={state}>
@@ -146,21 +165,36 @@ export function BillDetailModal({ bill: initialBill, state, canPay, onPay }: Bil
               )}
             </Modal.Body>
 
-            <Modal.Footer>
-              <Button variant="secondary" onPress={state.close}>
-                <X className="w-4 h-4 mr-2" />
-                Tutup
-              </Button>
-              {canPay && bill && (
-                <Button
-                  data-testid="pay-bill-button"
-                  variant="primary"
-                  className="bg-accent text-accent-foreground"
-                  onPress={() => onPay(bill)}
-                >
-                  Bayar Tagihan
+            <Modal.Footer className="flex justify-between items-center">
+              <div className="flex gap-2">
+                {canVoid && (
+                  <Button
+                    variant="ghost"
+                    className="text-danger border-danger/20 hover:bg-danger/10"
+                    onPress={handleVoid}
+                    isPending={voidMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Void Tagihan
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" onPress={state.close}>
+                  <X className="w-4 h-4 mr-2" />
+                  Tutup
                 </Button>
-              )}
+                {canPay && bill && (
+                  <Button
+                    data-testid="pay-bill-button"
+                    variant="primary"
+                    className="bg-accent text-accent-foreground"
+                    onPress={() => onPay(bill)}
+                  >
+                    Bayar Tagihan
+                  </Button>
+                )}
+              </div>
             </Modal.Footer>
           </Modal.Dialog>
         </Modal.Container>
