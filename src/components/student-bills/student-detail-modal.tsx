@@ -2,7 +2,7 @@ import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@herou
 import { X, User, GraduationCap, Calendar, Info, BadgePercent, Wallet } from 'lucide-react'
 import type { Student } from '@/types/finance'
 import { tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
-import { getRombelLabel } from '@/lib/tagihan-siswa'
+import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import { useStudentScholarships } from '@/hooks/use-scholarships'
 import { usePayments } from '@/hooks/use-payments'
 import { formatCurrency } from '@/lib/format'
@@ -24,6 +24,8 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
 
   if (!student) return null
 
+  const statusInfo = getStudentStatusInfo(student)
+  const latestRombel = getStudentLatestRombel(student)
   const rombelHistory = student.rombongan_belajar ?? []
   const assignedScholarships = scholarshipsData?.data ?? []
   const paymentHistory = paymentsData?.data ?? []
@@ -49,9 +51,21 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
                       <User className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-lg font-semibold">{student.fullname}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-lg font-semibold">{student.fullname}</p>
+                        {statusInfo && statusInfo.status !== 1 && (
+                          <Chip
+                            size="sm"
+                            variant="soft"
+                            color={statusInfo.color}
+                          >
+                            <Chip.Label>{statusInfo.label}</Chip.Label>
+                          </Chip>
+                        )}
+                      </div>
                       <p className="text-sm text-default-500 uppercase">
                         {student.jenis_kelamin === 'p' ? 'Perempuan' : 'Laki-laki'}
+                        {latestRombel && ` • ${getRombelLabel(latestRombel)}`}
                       </p>
                     </div>
                   </div>

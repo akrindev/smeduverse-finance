@@ -76,6 +76,8 @@ export interface Student {
   jenis_kelamin?: string | null
   rombel_aktif?: Rombel[]
   rombongan_belajar?: Rombel[]
+  summary?: ReceivablesSummary | null
+  by_status?: ReceivablesByStatus[]
 }
 
 export interface Rombel {
@@ -105,6 +107,7 @@ export interface Rombel {
     tanggal_keluar?: string | null
     keterangan_masuk?: string | null
     keterangan_keluar?: string | null
+    created_at?: string
   } | null
   jurusan?: {
     id?: number

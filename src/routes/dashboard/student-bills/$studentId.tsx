@@ -11,13 +11,14 @@ import { useRefStudent } from '@/hooks/use-references'
 import { formatCurrency } from '@/lib/format'
 import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
+import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
 import { Button, Card, Chip, Spinner, useOverlayState, toast } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
-import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw } from 'lucide-react'
+import { ArrowLeft, BookOpen, Calendar, CheckCircle2, ExternalLink, Receipt, Wallet, Info, UserPlus, RotateCw, RefreshCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { AssignScholarshipModal } from '@/components/beasiswa/assign-scholarship-modal'
 
@@ -47,6 +48,8 @@ function StudentDetailPage() {
   const paymentModalState = useOverlayState()
 
   const { data: selectedStudent, isLoading: studentLoading } = useRefStudent(studentId)
+  const statusInfo = selectedStudent ? getStudentStatusInfo(selectedStudent) : null
+  const latestRombel = selectedStudent ? getStudentLatestRombel(selectedStudent) : null
 
   const { data: scholarshipsData } = useStudentScholarships(studentId, {
     semester_id: search.semester_id,
@@ -55,6 +58,12 @@ function StudentDetailPage() {
   })
 
   const { mutate: recalculate, isPending: recalculating } = useRecalculateBills()
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['bills'] })
+    queryClient.invalidateQueries({ queryKey: ['payments'] })
+    toast.success('Data diperbarui dari server')
+  }
 
   const handleRecalculate = () => {
     const activeScholarship = scholarshipsData?.data?.[0]
@@ -214,27 +223,49 @@ function StudentDetailPage() {
             <div className="flex items-center gap-4">
               <div>
                 <p className="text-default-500 text-sm">Siswa Terpilih</p>
-                <div className="flex items-center gap-2">
-                  <p data-testid="selected-student-name" className="font-semibold text-lg">
-                    {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
-                  </p>
-                  {selectedStudent && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      isIconOnly
-                      className="w-6 h-6 rounded-full"
-                      onPress={studentDetailModalState.open}
-                      aria-label="Lihat detail profil siswa"
-                    >
-                      <Info className="w-3.5 h-3.5" />
-                    </Button>
-                  )}
-                </div>
-                <p className="text-default-500 text-xs">{selectedStudent?.nipd || selectedStudent?.nisn || '-'}</p>
+                  <div className="flex items-center gap-2">
+                    <p data-testid="selected-student-name" className="font-semibold text-lg">
+                      {selectedStudent?.fullname ?? (studentLoading ? 'Memuat...' : '-')}
+                    </p>
+                    {statusInfo && statusInfo.status !== 1 && (
+                      <Chip
+                        size="sm"
+                        variant="soft"
+                        color={statusInfo.color}
+                      >
+                        <Chip.Label>{statusInfo.label}</Chip.Label>
+                      </Chip>
+                    )}
+                    {selectedStudent && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        isIconOnly
+                        className="w-6 h-6 rounded-full"
+                        onPress={studentDetailModalState.open}
+                        aria-label="Lihat detail profil siswa"
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <p className="text-default-500 text-xs">
+                      {selectedStudent?.nipd || selectedStudent?.nisn || '-'}
+                      {latestRombel && ` • ${getRombelLabel(latestRombel)}`}
+                    </p>
+                  </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="secondary"
+                isDisabled={billsLoading}
+                onPress={handleRefresh}
+              >
+                <RefreshCcw className={`w-4 h-4 mr-2 ${billsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               <Button
                 variant="secondary"
                 isDisabled={recalculating}

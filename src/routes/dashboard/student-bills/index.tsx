@@ -10,11 +10,13 @@ import {
   tableHeadCellClass,
 } from '@/lib/page-styles'
 import { TablePagination } from '@/lib/table-pagination'
-import { getRombelLabel } from '@/lib/tagihan-siswa'
+import { formatCurrency } from '@/lib/format'
+import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import type { Rombel, Student } from '@/types/finance'
-import { Button, Card, Input, Label, ListBox, Select, Spinner, TextField, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Input, Label, ListBox, Select, Spinner, TextField, useOverlayState, toast } from '@heroui/react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
-import { Eye, Search, UserRound } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { Eye, Search, UserRound, RefreshCcw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { StudentBillsSearch } from '../student-bills'
 
@@ -24,6 +26,7 @@ export const Route = createFileRoute('/dashboard/student-bills/')({
 
 function StudentListPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const search = useSearch({ from: '/dashboard/student-bills' })
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 15 })
   const normalizedSearch = search.search?.trim() ?? ''
@@ -55,6 +58,11 @@ function StudentListPage() {
     })
   }
 
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['references', 'students'] })
+    toast.success('Daftar siswa diperbarui')
+  }
+
   const {
     data: studentsData,
     isLoading: studentsLoading,
@@ -64,7 +72,8 @@ function StudentListPage() {
   } = useRefStudents(
     {
       search: normalizedSearch || undefined,
-      page: 1, 
+      page: pagination.pageIndex + 1,
+      per_page: pagination.pageSize,
       tahun_ajaran_id: search.tahun_ajaran_id,
       semester_id: search.semester_id,
     }
@@ -74,36 +83,24 @@ function StudentListPage() {
     setPagination((previous) => ({ ...previous, pageIndex: 0 }))
   }, [search.search, search.tahun_ajaran_id, search.semester_id])
 
-  const filteredStudents = useMemo(() => {
-    const allStudents = studentsData?.data ?? []
-    const selectedYear = search.tahun_ajaran_id
+  const allStudents = studentsData?.data ?? []
+  const meta = studentsData?.meta
+  const isServerPaginated = Boolean(meta)
 
-    const studentsInYear = selectedYear
-      ? allStudents.filter((student) =>
-          (student.rombel_aktif ?? []).some(
-            (rombel) => Number(rombel.tahun_ajaran_id ?? 0) === selectedYear,
-          ),
-        )
-      : allStudents
-
-    return [...studentsInYear].sort((left, right) =>
-      left.fullname.localeCompare(right.fullname, 'id', { sensitivity: 'base' }),
-    )
-  }, [search.tahun_ajaran_id, studentsData?.data])
-
-  const pagedStudents = useMemo(() => {
+  const studentRows = useMemo(() => {
+    if (isServerPaginated) return allStudents
     const start = pagination.pageIndex * pagination.pageSize
-    return filteredStudents.slice(start, start + pagination.pageSize)
-  }, [filteredStudents, pagination.pageIndex, pagination.pageSize])
+    return allStudents.slice(start, start + pagination.pageSize)
+  }, [isServerPaginated, allStudents, pagination.pageIndex, pagination.pageSize])
 
-  const studentRows = pagedStudents
+  const pageCount = isServerPaginated 
+    ? (meta?.last_page ?? 1) 
+    : Math.max(Math.ceil(allStudents.length / pagination.pageSize), 1)
 
-  const pageCount = Math.max(
-    Math.ceil(filteredStudents.length / pagination.pageSize),
-    1,
-  )
+  const totalRows = isServerPaginated 
+    ? (meta?.total ?? 0) 
+    : allStudents.length
 
-  const totalRows = filteredStudents.length
   const visibleRows = studentRows.length
 
   const canPreviousPage = pagination.pageIndex > 0
@@ -126,25 +123,23 @@ function StudentListPage() {
 
   function pickStudentClass(student: Student): Rombel | null {
     const activeClasses = student.rombel_aktif ?? []
-    if (activeClasses.length === 0) return null
-
-    const selectedYear = search.tahun_ajaran_id
-    if (selectedYear) {
-      const classInSelectedYear = activeClasses.find(
-        (rombel) => Number(rombel.tahun_ajaran_id ?? 0) === selectedYear,
-      )
-
-      if (classInSelectedYear) {
-        return classInSelectedYear
+    
+    if (activeClasses.length > 0) {
+      const selectedYear = search.tahun_ajaran_id
+      if (selectedYear) {
+        const classInSelectedYear = activeClasses.find(
+          (rombel) => Number(rombel.tahun_ajaran_id ?? 0) === selectedYear,
+        )
+        if (classInSelectedYear) return classInSelectedYear
       }
+      return activeClasses[0]
     }
 
-    return activeClasses[0]
+    return getStudentLatestRombel(student)
   }
 
   function selectStudent(student: Student): void {
     const targetClass = pickStudentClass(student)
-    if (!targetClass) return
 
     navigate({
       to: '/dashboard/student-bills/$studentId',
@@ -152,7 +147,7 @@ function StudentListPage() {
         studentId: student.student_id,
       },
       search: {
-        classId: targetClass.id,
+        classId: targetClass?.id,
         tahun_ajaran_id: search.tahun_ajaran_id,
         semester_id: search.semester_id,
         from: 'student',
@@ -221,6 +216,18 @@ function StudentListPage() {
             </ListBox>
           </Select.Popover>
         </Select>
+
+        <div className="flex items-end">
+          <Button
+            variant="secondary"
+            isDisabled={studentsFetching}
+            onPress={handleRefresh}
+            className="md:mb-0 mb-4"
+          >
+            <RefreshCcw className={`w-4 h-4 mr-2 ${studentsFetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -234,28 +241,51 @@ function StudentListPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-border/70 border-t">
-                  <th className={tableHeadCellClass}>Siswa</th>
-                  <th className={tableHeadCellClass}>NIPD / NISN</th>
-                  <th className={tableHeadCellClass}>Kelas Aktif</th>
-                  <th className={tableHeadCellClass}>Jenjang</th>
-                  <th className={`${tableHeadCellClass} text-right`}>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {studentRows.map((student) => {
-                  const activeClass = pickStudentClass(student)
-                  const activeClassLabel = activeClass ? getRombelLabel(activeClass) : '-'
-                  const hasClass = Boolean(activeClass)
+                  <thead>
+                    <tr className="border-border/70 border-t">
+                      <th className={tableHeadCellClass}>Siswa</th>
+                      <th className={tableHeadCellClass}>NIPD / NISN</th>
+                      <th className={tableHeadCellClass}>Kelas Aktif</th>
+                      <th className={tableHeadCellClass}>Jenjang</th>
+                      <th className={tableHeadCellClass}>Total Tagihan</th>
+                      <th className={tableHeadCellClass}>Sisa</th>
+                      <th className={`${tableHeadCellClass} text-right`}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {studentRows.map((student) => {
+                      const activeClass = pickStudentClass(student)
+                      const hasClass = Boolean(activeClass)
+                      const statusInfo = getStudentStatusInfo(student)
+                      const summary = student.summary
 
-                  return (
-                    <tr key={student.student_id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
-                      <td className={`${tableBodyCellClass} font-semibold`}>{student.fullname}</td>
-                      <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
-                      <td className={tableBodyCellClass}>{activeClassLabel}</td>
-                      <td className={tableBodyCellClass}>{activeClass?.tingkat_kelas ?? '-'}</td>
-                      <td className={`${tableBodyCellClass} text-right`}>
+                      return (
+                        <tr key={student.student_id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
+                          <td className={`${tableBodyCellClass} font-semibold`}>{student.fullname}</td>
+                          <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
+                          <td className={tableBodyCellClass}>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {activeClass && (
+                                <span className={statusInfo.status === 1 ? 'font-medium' : 'text-default-500'}>
+                                  {getRombelLabel(activeClass)}
+                                </span>
+                              )}
+                              {statusInfo.status !== 1 && (
+                                <Chip size="sm" variant="soft" color={statusInfo.color}>
+                                  <Chip.Label>{statusInfo.label}</Chip.Label>
+                                </Chip>
+                              )}
+                              {!activeClass && statusInfo.status === 1 && '-'}
+                            </div>
+                          </td>
+                          <td className={tableBodyCellClass}>{activeClass?.tingkat_kelas ?? '-'}</td>
+                          <td className={tableBodyCellClass}>
+                            {summary ? formatCurrency(summary.total_net) : '-'}
+                          </td>
+                          <td className={`${tableBodyCellClass} font-semibold ${summary?.total_outstanding ? 'text-danger' : 'text-success'}`}>
+                            {summary ? formatCurrency(summary.total_outstanding) : '-'}
+                          </td>
+                          <td className={`${tableBodyCellClass} text-right`}>
                         <div className="flex justify-end gap-2">
                           <Button
                             size="sm"
