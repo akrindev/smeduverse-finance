@@ -13,7 +13,7 @@ import {
 import { getRombelLabel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill, PaginatedResponse, Student } from '@/types/finance'
-import { Button, Card, Chip, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState, Avatar } from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
@@ -217,7 +217,15 @@ function ClassDetailPage() {
 
                       return (
                         <tr key={student.student_id} className="border-t border-border/50 hover:bg-surface/60 transition-colors">
-                          <td className={`${tableBodyCellClass} font-medium text-default-700`}>{student.fullname}</td>
+                          <td className={`${tableBodyCellClass} font-medium text-default-700`}>
+                            <div className="flex items-center gap-3">
+                              <Avatar size="sm">
+                                <Avatar.Image src={student.photo || undefined} alt={student.fullname} />
+                                <Avatar.Fallback>{student.fullname.charAt(0)}</Avatar.Fallback>
+                              </Avatar>
+                              <span>{student.fullname}</span>
+                            </div>
+                          </td>
                           <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
                           <td className={tableBodyCellClass}>
                             {student.jenis_kelamin ? genderLabels[student.jenis_kelamin.toLowerCase()] || student.jenis_kelamin : '-'}

@@ -73,6 +73,7 @@ export interface Student {
   fullname: string
   nipd: string | null
   nisn: string | null
+  photo?: string | null
   jenis_kelamin?: string | null
   rombel_aktif?: Rombel[]
   rombongan_belajar?: Rombel[]

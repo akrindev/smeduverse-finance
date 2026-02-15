@@ -14,7 +14,7 @@ import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import { TablePagination } from '@/lib/table-pagination'
 import type { Bill } from '@/types/finance'
-import { Button, Card, Chip, Spinner, useOverlayState, toast } from '@heroui/react'
+import { Button, Card, Chip, Spinner, useOverlayState, toast, Avatar } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { getCoreRowModel, useReactTable } from '@tanstack/react-table'
@@ -221,6 +221,12 @@ function StudentDetailPage() {
         <Card.Header className={cardHeaderClass}>
           <div className="flex flex-wrap justify-between items-center gap-2 w-full">
             <div className="flex items-center gap-4">
+              <Avatar className="w-12 h-12">
+                <Avatar.Image src={selectedStudent?.photo || undefined} alt={selectedStudent?.fullname} />
+                <Avatar.Fallback>
+                  <Info className="w-6 h-6" />
+                </Avatar.Fallback>
+              </Avatar>
               <div>
                 <p className="text-default-500 text-sm">Siswa Terpilih</p>
                   <div className="flex items-center gap-2">

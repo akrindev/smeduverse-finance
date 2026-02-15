@@ -1,4 +1,4 @@
-import { Button, Chip, Modal, Separator, useOverlayState, Spinner } from '@heroui/react'
+import { Button, Chip, Modal, Separator, useOverlayState, Spinner, Avatar } from '@heroui/react'
 import { X, User, GraduationCap, Calendar, Info, BadgePercent, Wallet } from 'lucide-react'
 import type { Student } from '@/types/finance'
 import { tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
@@ -47,9 +47,12 @@ export function StudentDetailModal({ student, state }: StudentDetailModalProps) 
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-                      <User className="w-6 h-6" />
-                    </div>
+                    <Avatar className="w-12 h-12">
+                      <Avatar.Image src={student.photo || undefined} alt={student.fullname} />
+                      <Avatar.Fallback>
+                        <User className="w-6 h-6" />
+                      </Avatar.Fallback>
+                    </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-lg font-semibold">{student.fullname}</p>

@@ -13,7 +13,7 @@ import { TablePagination } from '@/lib/table-pagination'
 import { formatCurrency } from '@/lib/format'
 import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import type { Rombel, Student } from '@/types/finance'
-import { Button, Card, Chip, Input, Label, ListBox, Select, Spinner, TextField, useOverlayState, toast } from '@heroui/react'
+import { Button, Card, Chip, Input, Label, ListBox, Select, Spinner, TextField, useOverlayState, toast, Avatar } from '@heroui/react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { Eye, Search, UserRound, RefreshCcw } from 'lucide-react'
@@ -261,7 +261,20 @@ function StudentListPage() {
 
                       return (
                         <tr key={student.student_id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
-                          <td className={`${tableBodyCellClass} font-semibold`}>{student.fullname}</td>
+                          <td className={tableBodyCellClass}>
+                            <div className="flex items-center gap-3">
+                              <Avatar className="w-8 h-8">
+                                <Avatar.Image
+                                  src={student.photo || undefined}
+                                  alt={student.fullname}
+                                />
+                                <Avatar.Fallback>
+                                  {student.fullname.charAt(0)}
+                                </Avatar.Fallback>
+                              </Avatar>
+                              <span className="font-semibold">{student.fullname}</span>
+                            </div>
+                          </td>
                           <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
                           <td className={tableBodyCellClass}>
                             <div className="flex flex-wrap items-center gap-2">

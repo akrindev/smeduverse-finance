@@ -1,4 +1,4 @@
-import { Button, ComboBox, Input, ListBox, Spinner } from '@heroui/react'
+import { Button, ComboBox, Input, ListBox, Spinner, Avatar } from '@heroui/react'
 import { X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
@@ -128,9 +128,15 @@ export function StudentSearchSelect({
                 textValue={`${student.fullname} ${student.nipd ?? ''} ${student.nisn ?? ''}`}
                 isDisabled={value.includes(student.student_id)}
               >
-                <div className="flex flex-col">
-                  <span className="text-sm text-foreground">{student.fullname}</span>
-                  <span className="text-xs text-default-500">{student.nipd || student.nisn || '-'}</span>
+                <div className="flex items-center gap-3">
+                  <Avatar size="sm">
+                    <Avatar.Image src={student.photo || undefined} alt={student.fullname} />
+                    <Avatar.Fallback>{student.fullname.charAt(0)}</Avatar.Fallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-foreground">{student.fullname}</span>
+                    <span className="text-xs text-default-500">{student.nipd || student.nisn || '-'}</span>
+                  </div>
                 </div>
               </ListBox.Item>
             ))}
