@@ -418,17 +418,17 @@ function StudentDetailPage() {
                               <Calendar className="w-4 h-4 text-accent" />
                               <h2 className="font-semibold text-base">Tahun {year}</h2>
                             </div>
-                            <div className="gap-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
+                            <div className="gap-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                               {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => {
                                 const bill = monthMap.get(month)
                                 if (!bill) {
                                   return (
                                     <div
                                       key={month}
-                                      className="bg-surface/30 opacity-40 p-3 border border-border/40 rounded-2xl text-center"
+                                      className="bg-surface/30 opacity-40 p-4 border border-border/40 rounded-2xl text-center flex flex-col justify-center min-h-[100px]"
                                     >
                                       <p className="font-medium text-default-500 text-xs">{MONTH_NAMES[month - 1]}</p>
-                                      <p className="mt-1 text-[10px] text-default-500">-</p>
+                                      <p className="mt-1 text-[10px] text-default-500 italic">Belum dibuat</p>
                                     </div>
                                   )
                                 }
@@ -456,16 +456,31 @@ function StudentDetailPage() {
                                     key={month}
                                     data-testid="spp-bill-item"
                                     variant="secondary"
-                                    className={`h-auto min-h-[84px] w-full border ${statusClasses} px-2 py-3`}
+                                    className={`h-auto min-h-[100px] w-full border ${statusClasses} px-3 py-4`}
                                     onPress={() => openBillDetail(bill)}
                                   >
-                                    <div className="flex flex-col items-center gap-1.5">
-                                      <span className={`text-xs font-semibold ${statusTextClass}`}>{MONTH_NAMES[month - 1]}</span>
+                                    <div className="flex flex-col items-center gap-2 w-full text-center">
+                                      <span className={`text-xs font-bold uppercase tracking-tight ${statusTextClass}`}>{MONTH_NAMES[month - 1]}</span>
+                                      
                                       {isPaid ? (
-                                        <CheckCircle2 className="w-4 h-4 text-success" />
+                                        <div className="flex flex-col items-center gap-1">
+                                          <CheckCircle2 className="w-5 h-5 text-success" />
+                                          <span className="text-[10px] text-success/80 font-semibold">{formatCurrency(bill.amount_net)}</span>
+                                        </div>
                                       ) : (
-                                        <span className={`text-[10px] font-medium ${statusTextClass}`}>
-                                          {billStatusConfig[bill.status].label}
+                                        <div className="flex flex-col items-center gap-1">
+                                          <span className={`text-[11px] font-bold ${statusTextClass}`}>
+                                            {formatCurrency(bill.amount_outstanding)}
+                                          </span>
+                                          <div className={`px-2 py-0.5 rounded-full text-[9px] font-medium uppercase border ${statusClasses} ${statusTextClass}`}>
+                                            {billStatusConfig[bill.status].label}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {!isPaid && bill.due_date && (
+                                        <span className="text-[8px] text-default-500 mt-1">
+                                          Jatuh Tempo: {bill.due_date}
                                         </span>
                                       )}
                                     </div>
