@@ -10,7 +10,7 @@ import {
   tableHeadCellClass,
 } from '@/lib/page-styles'
 import { TablePagination } from '@/lib/table-pagination'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
 import type { Rombel, Student } from '@/types/finance'
 import { Button, Card, Chip, Input, Label, ListBox, Select, Spinner, TextField, useOverlayState, toast, Avatar } from '@heroui/react'
@@ -286,7 +286,7 @@ function StudentListPage() {
                           <td className={tableBodyCellClass}>
                             <div className="flex flex-col">
                               <span>{student.jenis_kelamin ? genderLabels[student.jenis_kelamin.toLowerCase()] || student.jenis_kelamin : '-'}</span>
-                              <span className="text-[10px] text-default-500">{student.tanggal_lahir || '-'}</span>
+                              <span className="text-[10px] text-default-500">{student.tanggal_lahir ? formatDate(student.tanggal_lahir) : '-'}</span>
                             </div>
                           </td>
                           <td className={tableBodyCellClass}>
