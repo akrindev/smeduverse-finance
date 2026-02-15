@@ -9,7 +9,7 @@ import { usePayments } from '@/hooks/use-payments'
 import { useStudentScholarships } from '@/hooks/use-scholarships'
 import { useRefStudent } from '@/hooks/use-references'
 import { StatCard } from '@/components/shared/stat-card'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatDate } from '@/lib/format'
 import { cardHeaderClass, surfaceCardClass, tableBodyCellClass, tableHeadCellClass } from '@/lib/page-styles'
 import { billStatusConfig, MONTH_NAMES } from '@/lib/student-bills'
 import { getRombelLabel, getStudentStatusInfo, getStudentLatestRombel } from '@/lib/tagihan-siswa'
@@ -634,36 +634,52 @@ function StudentDetailPage() {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-border/70 border-t">
-                            <th className={tableHeadCellClass}>No. Pembayaran</th>
-                            <th className={tableHeadCellClass}>Metode</th>
-                            <th className={tableHeadCellClass}>Total</th>
-                            <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
-                            <th className={tableHeadCellClass}>Status</th>
-                            <th className={tableHeadCellClass}>Referal/Catatan</th>
+                          <th className={tableHeadCellClass}>No. Pembayaran</th>
+                          <th className={tableHeadCellClass}>Metode</th>
+                          <th className={tableHeadCellClass}>Alokasi Tagihan</th>
+                          <th className={tableHeadCellClass}>Total</th>
+                          <th className={`${tableHeadCellClass} hidden md:table-cell`}>Tanggal</th>
+                          <th className={tableHeadCellClass}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((payment) => (
+                          <tr key={payment.id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
+                            <td className={tableBodyCellClass}>
+                              <p className="font-mono text-xs">{payment.payment_number}</p>
+                              <p className="text-[10px] text-default-400 mt-0.5">Ref: {payment.reference_number || '-'}</p>
+                            </td>
+                            <td className={`${tableBodyCellClass} capitalize`}>{payment.payment_method}</td>
+                            <td className={tableBodyCellClass}>
+                              <div className="flex flex-col gap-1 max-w-[200px]">
+                                {(payment.allocations ?? []).map((alloc) => {
+                                  const bill = allBills.find((b) => b.id === alloc.finance_bill_id)
+                                  return (
+                                    <div key={alloc.id} className="flex flex-col leading-tight">
+                                      <span className="text-xs font-medium truncate">
+                                        {bill?.title || `Tagihan #${alloc.finance_bill_id}`}
+                                      </span>
+                                      <span className="text-[9px] text-success font-semibold">
+                                        {formatCurrency(alloc.allocated_amount)}
+                                      </span>
+                                    </div>
+                                  )
+                                })}
+                                {(payment.allocations ?? []).length === 0 && (
+                                  <span className="text-xs text-default-400 italic">Tanpa alokasi</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className={`${tableBodyCellClass} font-semibold text-accent`}>{formatCurrency(payment.total_amount)}</td>
+                            <td className={`${tableBodyCellClass} hidden md:table-cell text-xs`}>{formatDate(payment.payment_date)}</td>
+                            <td className={tableBodyCellClass}>
+                              <Chip size="sm" variant="soft" color={paymentStatusConfig[payment.status]?.color ?? 'default'}>
+                                <Chip.Label>{paymentStatusConfig[payment.status]?.label ?? payment.status}</Chip.Label>
+                              </Chip>
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {payments.map((payment) => (
-                            <tr key={payment.id} className="hover:bg-surface/60 border-border/50 border-t transition-colors">
-                              <td className={tableBodyCellClass}>
-                                <p className="font-mono text-xs">{payment.payment_number}</p>
-                              </td>
-                              <td className={`${tableBodyCellClass} capitalize`}>{payment.payment_method}</td>
-                              <td className={`${tableBodyCellClass} font-semibold`}>{formatCurrency(payment.total_amount)}</td>
-                              <td className={`${tableBodyCellClass} hidden md:table-cell`}>{payment.payment_date}</td>
-                              <td className={tableBodyCellClass}>
-                                <Chip size="sm" variant="soft" color={paymentStatusConfig[payment.status]?.color ?? 'default'}>
-                                  <Chip.Label>{paymentStatusConfig[payment.status]?.label ?? payment.status}</Chip.Label>
-                                </Chip>
-                              </td>
-                              <td className={tableBodyCellClass}>
-                                <p className="max-w-[200px] text-xs text-default-500 truncate">
-                                  {payment.reference_number || payment.notes || '-'}
-                                </p>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
+                        ))}
+                      </tbody>
                       </table>
                       <TablePagination
                         pageIndex={paymentPagination.pageIndex}
