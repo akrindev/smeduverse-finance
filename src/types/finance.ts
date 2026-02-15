@@ -75,6 +75,7 @@ export interface Student {
   nisn: string | null
   photo?: string | null
   jenis_kelamin?: string | null
+  tanggal_lahir?: string | null
   rombel_aktif?: Rombel[]
   rombongan_belajar?: Rombel[]
   summary?: ReceivablesSummary | null

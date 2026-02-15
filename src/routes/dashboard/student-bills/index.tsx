@@ -24,6 +24,11 @@ export const Route = createFileRoute('/dashboard/student-bills/')({
   component: StudentListPage,
 })
 
+const genderLabels: Record<string, string> = {
+  l: 'Laki-laki',
+  p: 'Perempuan',
+}
+
 function StudentListPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -244,7 +249,7 @@ function StudentListPage() {
                   <thead>
                     <tr className="border-border/70 border-t">
                       <th className={tableHeadCellClass}>Siswa</th>
-                      <th className={tableHeadCellClass}>NIPD / NISN</th>
+                      <th className={tableHeadCellClass}>Gender / Tgl Lahir</th>
                       <th className={tableHeadCellClass}>Kelas Aktif</th>
                       <th className={tableHeadCellClass}>Jenjang</th>
                       <th className={tableHeadCellClass}>Total Tagihan</th>
@@ -272,10 +277,18 @@ function StudentListPage() {
                                   {student.fullname.charAt(0)}
                                 </Avatar.Fallback>
                               </Avatar>
-                              <span className="font-semibold">{student.fullname}</span>
+                              <div className="flex flex-col">
+                                <span className="font-semibold">{student.fullname}</span>
+                                <span className="text-[10px] text-default-500 font-mono">{student.nipd || '-'}</span>
+                              </div>
                             </div>
                           </td>
-                          <td className={tableBodyCellClass}>{student.nipd || student.nisn || '-'}</td>
+                          <td className={tableBodyCellClass}>
+                            <div className="flex flex-col">
+                              <span>{student.jenis_kelamin ? genderLabels[student.jenis_kelamin.toLowerCase()] || student.jenis_kelamin : '-'}</span>
+                              <span className="text-[10px] text-default-500">{student.tanggal_lahir || '-'}</span>
+                            </div>
+                          </td>
                           <td className={tableBodyCellClass}>
                             <div className="flex flex-wrap items-center gap-2">
                               {activeClass && (
