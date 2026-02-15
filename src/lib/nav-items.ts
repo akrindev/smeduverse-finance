@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 interface NavItem {
-  to: '/dashboard' | '/dashboard/class-bills' | '/dashboard/fee-types' | '/dashboard/beasiswa' | '/dashboard/payments' | '/dashboard/reports'
+  to: '/dashboard' | '/dashboard/class-bills' | '/dashboard/student-bills' | '/dashboard/fee-types' | '/dashboard/beasiswa' | '/dashboard/payments' | '/dashboard/reports'
   search?: Record<string, any>
   label: string
   icon: LucideIcon
@@ -21,8 +21,7 @@ export const navItems: readonly NavItem[] = [
   { to: '/dashboard' as const, label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { to: '/dashboard/class-bills' as const, label: 'Tagihan Kelas', icon: Users },
   {
-    to: '/dashboard/class-bills' as const,
-    search: { search_by: 'student' },
+    to: '/dashboard/student-bills' as const,
     label: 'Tagihan Siswa',
     icon: UserRound,
   },

@@ -169,6 +169,18 @@ function StudentDetailPage() {
   const canPaySelectedBill = Boolean(selectedBill && selectedBill.status !== 'void' && selectedBill.amount_outstanding > 0)
 
   function backToStudents(): void {
+    if (search.from === 'student') {
+      navigate({
+        to: '/dashboard/student-bills',
+        search: {
+          tahun_ajaran_id: search.tahun_ajaran_id,
+          semester_id: search.semester_id,
+        },
+        replace: true,
+      })
+      return
+    }
+
     if (classId) {
       navigate({
         to: '/dashboard/class-bills/$classId',

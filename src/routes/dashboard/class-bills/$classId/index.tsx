@@ -121,6 +121,7 @@ function ClassDetailPage() {
         classId,
         tahun_ajaran_id: search.tahun_ajaran_id,
         semester_id: search.semester_id,
+        from: 'class',
       },
     })
   }
